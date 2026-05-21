@@ -2,12 +2,15 @@ from manim import *
 
 config.background_color="#1E1E1E"
 Text.set_default(font = "Manrope")
+Circumscribe.set_default(color=WHITE)
+Indicate.set_default(color="#AA77C7")
 
 class aulaCompleta(MovingCameraScene):
     def construct(self):
         # ----------- Cenas -----------
         animacaoAntigaWindows.construct(self)
         alunoPassou.construct(self)
+        simMas.construct(self)
 
 class animacaoAntigaWindows(Scene):
     def construct(self):
@@ -86,7 +89,7 @@ class animacaoAntigaWindows(Scene):
 class alunoPassou(MovingCameraScene):
     def construct(self):
         # ----------- Objetos -----------
-        codeMedia = '''double calcularMedia(float n1, float n2) {
+        codeMedia = r'''double calcularMedia(float n1, float n2) {
     float soma = 0;
     
     soma = n1 + n2;
@@ -151,20 +154,6 @@ int main() {
         blocoCalcularMedia = codeRenderMedia.code_lines[0:8]
         blocoMain = codeRenderMedia.code_lines[8:30]
 
-        # Type With Cursor, SIM, isso aqui é uma gambiarra absurda para eu poder brincar com os caracteres específicos do código
-        # double media = calcularMedia(a, b);
-        textDoubleMedia = Text("double media ",t2c={"double":"#AA77C7"})
-        textIgual = Text("=",color="#58C4DD").next_to(textDoubleMedia,RIGHT)
-        textCalcularMedia = Text("calcularMedia").next_to(textIgual,RIGHT)
-        textAbreP   = Text("(", color="#58C4DD").next_to(textCalcularMedia, RIGHT)
-        textParamA  = Text("a").next_to(textAbreP, RIGHT).align_to(textCalcularMedia, DOWN)
-        textVirgula = Text(",", color="#58C4DD").next_to(textParamA, RIGHT).align_to(textCalcularMedia, DOWN)
-        textParamB  = Text("b").next_to(textVirgula, RIGHT).align_to(textCalcularMedia, DOWN)
-        textFechaP  = Text(")", color="#58C4DD").next_to(textParamB, RIGHT).align_to(textCalcularMedia, DOWN)
-
-        groupLinhaCodigo = VGroup(textDoubleMedia, textIgual, textCalcularMedia, textAbreP, textParamA, textVirgula, textParamB, textFechaP).scale(0.5).move_to(codeRenderMedia.code_lines[17])
-        groupParam = VGroup(textAbreP, textParamA, textVirgula, textParamB, textFechaP)
-
         # ----------- Animação -----------
         # Uma Cena
         self.play(Write(codeRenderMedia))
@@ -200,32 +189,78 @@ int main() {
         # Zoom no bloco
         self.play(self.camera.frame.animate.set(width = blocoMain.width*2).move_to(blocoMain))
         
+        
         # Circumscribe na Main
-        self.play(Circumscribe(codeRenderMedia.code_lines[8],color=WHITE),run_time=1.2)
+        self.play(Circumscribe(codeRenderMedia.code_lines[8], color=WHITE),run_time=1.2)
 
         # Circumscribe nas notas
-        self.play(Circumscribe(codeRenderMedia.code_lines[12:16],color=WHITE),run_time=1.2)
+        self.play(Circumscribe(codeRenderMedia.code_lines[12:16], color=WHITE),run_time=1.2)
 
         self.wait()
 
         # Zoom no calcularMedia
         self.play(self.camera.frame.animate.set(width = codeRenderMedia.code_lines[17].width*2).move_to(codeRenderMedia.code_lines[17]), Wiggle(codeRenderMedia.code_lines[17]))
-
         self.wait()
 
-        self.play(codeRenderMedia[1:].animate.set_opacity(0.2))
-        self.play(Write(groupLinhaCodigo))
+        # Move códigos para longe
+        self.play(codeRenderMedia.code_lines[0:16].animate.shift(UP*2), codeRenderMedia.code_lines[18:].animate.shift(DOWN*2))
         self.wait()
-        self.play(Circumscribe(textIgual))
+
+        self.play(Circumscribe(blocoMain[9][11],color=WHITE))
         self.wait()
-        self.play(Circumscribe(textCalcularMedia))
+        self.play(Circumscribe(blocoMain[9][12:25],color=WHITE))
         self.wait()
-        self.play(Circumscribe(groupParam))
+        self.play(Circumscribe(blocoMain[9][26:29],color=WHITE))
         self.wait()
+
+        # Move códigos de volta para perto
+        self.play(codeRenderMedia.code_lines[0:16].animate.shift(DOWN*2), codeRenderMedia.code_lines[18:].animate.shift(UP*2))
+        self.wait()
+
+        # Câmera se desloca para a função calcular media
+        self.play(self.camera.frame.animate.set(width = blocoCalcularMedia.width*2).move_to(blocoCalcularMedia))
+        self.wait()
+
+        # POsicao da camera
+        cam_center = self.camera.frame.get_center()
+        cam_width = self.camera.frame.width
+
+        # Centraliaz na calcular media
+        self.play(self.camera.frame.animate.set(width = blocoCalcularMedia[0].width*2).move_to(blocoCalcularMedia[0]), blocoMain.animate.shift(DOWN*3), blocoCalcularMedia[1:].animate.shift(DOWN*3))
+        self.wait()
+
+        self.play(Circumscribe(blocoCalcularMedia[0][0:6], color=WHITE))
+        self.wait()
+        self.play(Circumscribe(blocoCalcularMedia[0][6:19], color=WHITE))
+        self.wait()
+        self.play(Circumscribe(blocoCalcularMedia[0][20:35], color=WHITE))
+        self.wait()
+
+        # Retorna a focar no bloco todo
+        self.play(self.camera.frame.animate.set(width=cam_width).move_to(cam_center),blocoMain.animate.shift(UP*3),blocoCalcularMedia[1:].animate.shift(UP*3))
+        self.wait()
+
+        # Variável retorna para onde foi chamada
+        self.play(Indicate(blocoCalcularMedia[6]))
+        self.wait()
+
+
         
-        self.play(Unwrite(groupLinhaCodigo))
-        self.play(codeRenderMedia[1:].animate.set_opacity(1))
+        # Zoom na Main
+        self.play(self.camera.frame.animate.set(width = codeRenderMedia.code_lines[17].width*2).move_to(codeRenderMedia.code_lines[17]))
         self.wait()
 
+        self.play(Indicate(codeRenderMedia.code_lines[17]))
+        self.wait()
 
+        # Finalmente termina tudo, dá clear, e volta a câmera para a posição original
+        self.play(self.camera.frame.animate.shift(RIGHT*20))
+        self.clear()
+        self.play(Restore(self.camera.frame))
 
+class simMas(Scene):
+    def construct(self):
+        exemplo = Text("Exemplo")
+
+        self.add(exemplo)
+        self.wait()
