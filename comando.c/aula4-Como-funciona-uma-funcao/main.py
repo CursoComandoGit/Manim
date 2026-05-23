@@ -11,6 +11,7 @@ class aulaCompleta(MovingCameraScene):
         animacaoAntigaWindows.construct(self)
         alunoPassou.construct(self)
         simMas.construct(self)
+        codigo5vezes.construct(self)
 
 class animacaoAntigaWindows(Scene):
     def construct(self):
@@ -89,7 +90,8 @@ class animacaoAntigaWindows(Scene):
 class alunoPassou(MovingCameraScene):
     def construct(self):
         # ----------- Objetos -----------
-        codeMedia = r'''double calcularMedia(float n1, float n2) {
+        codeMedia = r'''#include <stdio.h>
+double calcularMedia(float n1, float n2) {
     float soma = 0;
     
     soma = n1 + n2;
@@ -260,7 +262,118 @@ int main() {
 
 class simMas(Scene):
     def construct(self):
-        exemplo = Text("Exemplo")
+        # ----------- Objetos -----------
+        textSim = Text("Sim,",color="#AA77C7")
+        textMas = Text("mas").next_to(textSim,RIGHT).align_to(textSim, DOWN)
 
-        self.add(exemplo)
+        groupSimas = VGroup(textSim,textMas).move_to(ORIGIN).scale(2)
+
+        # ----------- Animações -----------
+        self.play(Write(textSim))
         self.wait()
+        self.play(Write(textMas))
+        self.wait()
+
+        self.play(Unwrite(groupSimas))
+        self.wait()
+
+class codigo5vezes(Scene):
+    def construct(self):
+        # ----------- Objetos -----------
+        code5vezes=r'''// printf() e scanf() omitidos para melhorar visualização
+
+    float soma1;
+    
+    soma1 = n1 + n2;
+    double media1 = soma1 / 2;
+
+    float soma2;
+    
+    soma2 = n3 + n4;
+    double media2 = soma2 / 2;
+    
+    float soma3;
+
+    soma3 = n5 + n6;
+    double media3 = soma3 / 2;
+    
+    float soma4;
+    
+    soma4 = n7 + n8;
+    double media4 = soma4 / 2;
+    
+    float soma5;
+
+    soma5 = n9 + n10;
+    double media5 = soma5 / 2;'''
+        
+        codeRender5vezes = Code(code_string=code5vezes, 
+            language="c",
+            formatter_style="material",
+            add_line_numbers=False,
+            background="rectangle", 
+            background_config={
+                "fill_opacity" : 0,
+                "stroke_opacity": 0,    
+                "color" : "#1E1E1E"
+                }
+        ).scale(0.7).move_to([0,-20,0])
+
+        codeLimpo = r'''#include <stdio.h>
+double calcularMedia(float n1, float n2) {
+    float soma = 0;
+    
+    soma = n1 + n2;
+    double media = soma / 2;
+    
+    return media;
+}
+int main() {
+    // printf() e scanf() omitidos para melhorar visualização
+
+    double media1 = calcularMedia(a1,b1)
+
+    double media2 = calcularMedia(a2,b2)
+
+    double media3 = calcularMedia(a3,b3)
+
+    double media4 = calcularMedia(a4,b4)
+
+    double media5 = calcularMedia(a5,b5)
+}'''
+        codeRenderLimpo = Code(code_string=codeLimpo, 
+            language="c",
+            formatter_style="material",
+            add_line_numbers=False,
+            background="rectangle", 
+            background_config={
+                "fill_opacity" : 0,
+                "stroke_opacity": 0,    
+                "color" : "#1E1E1E"
+                }
+        ).scale(0.7)
+
+        textModularizar = Text("Modularizar",color="#AA77C7")
+        textSeparar = Text("Separar").next_to(textModularizar,DOWN)
+        textOrganizar = Text("Organizar").next_to(textSeparar,DOWN)
+
+        group3Palavras = VGroup(textModularizar,textSeparar,textOrganizar).move_to(ORIGIN).scale(2)
+        # ----------- Animações -----------
+        self.play(codeRender5vezes.animate.move_to(ORIGIN),run_time=2)
+        self.wait()
+
+        self.play(ReplacementTransform(codeRender5vezes,codeRenderLimpo))
+        self.wait()
+        self.play(Flash([3,2,0]))
+        self.wait()
+
+        self.play(codeRenderLimpo[1:].animate.set_opacity(0.2))
+        self.play(Write(textModularizar))
+        self.play(Write(textSeparar))
+        self.play(Write(textOrganizar))
+        self.wait()
+
+        self.play(Unwrite(group3Palavras),Unwrite(codeRenderLimpo))
+        self.wait()
+
+
