@@ -30,7 +30,7 @@ class AulaCompleta(MovingCameraScene):
           #--------PARTE1---------
           HelloWorld.construct(self)
           #GRAVAÇÃO DE TELA
-          Funcao.construct(self) #cena de explicação de função que ainda nao fiz
+          Funcao.construct(self)
           TiposFuncoes.construct(self)
           Curiosidade.construct(self)
           #PARTE2
