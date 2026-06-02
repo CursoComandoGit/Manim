@@ -174,10 +174,17 @@ int main(){
 }'''
 
         helloworldcode = codigoComando(helloworldstring)
-        self.play(FadeIn(helloworldcode[0]), Write(helloworldcode[1][0]), run_time=1)
-        self.wait(2.5)
-        self.play(Write(helloworldcode[1][2]), Write(helloworldcode[1][4:6]), run_time=1)
+        self.play(FadeIn(helloworldcode))
+        self.wait()
+        self.play(helloworldcode[1][1:].animate.set_opacity(0.4))
 
+        self.wait()
+        self.play(helloworldcode[1:].animate.set_opacity(1))
+        self.wait()
+        
+        self.play(helloworldcode[1][0].animate.set_opacity(0.4),
+                  helloworldcode[1][3].animate.set_opacity(0.4))
+        
         sublinhado = Underline(helloworldcode[1][2][3:9], color=WHITE)
         self.play(Create(sublinhado))
         self.play(FadeOut(sublinhado))
@@ -186,12 +193,25 @@ int main(){
         self.play(Create(sublinhado2))
         self.play(FadeOut(sublinhado2))
 
+        self.wait()
+        self.play(helloworldcode[1:].animate.set_opacity(1))
+        self.wait()
+
+        # Versão antiga
+        #self.play(FadeIn(helloworldcode[0]), Write(helloworldcode[1][0]), run_time=1)
+        #self.wait(2.5)
+        #self.play(Write(helloworldcode[1][2]), Write(helloworldcode[1][4:6]), run_time=1)
+
+        #sublinhado = Underline(helloworldcode[1][2][3:9], color=WHITE)
+        #self.play(Create(sublinhado))
+        #self.play(FadeOut(sublinhado))
+
+        #sublinhado2 = Underline(helloworldcode[1][4][0:7], color=WHITE)
+        #self.play(Create(sublinhado2))
+        #self.play(FadeOut(sublinhado2))
+
         # self.play(Circumscribe(helloworldcode[1][2][0:9], buff=0.05, fade_out=True, color=WHITE), run_time=1.5)
         # self.play(Circumscribe(helloworldcode[1][4], buff=0.05, fade_out=True, color=WHITE), run_time=1.5)
-
-        self.wait()
-        self.play(Write(helloworldcode[1][3]), run_time=1)
-        self.wait(2.3)
 
         prt = '''printf("Olá, mundo!");''' #nem precisava disso agr q percebi
         prtc = codigoComando(prt).move_to(helloworldcode[1][3])
