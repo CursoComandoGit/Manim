@@ -137,12 +137,12 @@ int main()
 
 
         # ----------- Animações -----------
-        self.play(Write(codeRenderExemplo))
+        self.play(Write(codeRenderExemplo), run_time=2)
         self.wait()
 
         self.camera.frame.save_state()
 
-        self.play(self.camera.frame.animate.set(width=codeRenderExemplo.code_lines[0:9].width * 3.8).move_to(codeRenderExemplo.code_lines[0:9].get_center() + RIGHT*1.4))
+        self.play(self.camera.frame.animate.set(width=codeRenderExemplo.code_lines[0:9].width * 3.8).move_to(codeRenderExemplo.code_lines[0:9].get_center() + RIGHT*1.4), run_time=1.5)
         #self.play(self.camera.frame.animate.shift(RIGHT))
         self.wait()
 
@@ -279,7 +279,9 @@ class Funcao(Scene):
         flecha = Arrow(start=codgrupo.get_right(), end=tarefa.get_left())
 
         self.play(FadeIn(codgrupo))
+        self.wait()
         self.play(GrowArrow(flecha))
+        self.wait()
         self.play(FadeIn(tarefa))
         self.wait()
         self.play(FadeOut(*self.mobjects))
@@ -590,6 +592,8 @@ int main() {
         # Pulando ele com [1:] (todos os submobjects a partir do índice 1) evita-se a bagunça toda porque nunca tocamos no variável de contorno 
         self.play(codeRenderMedia[1:].animate.set_opacity(0.5))
         self.play(Write(textDemonstrativo))
+        self.wait()
+        self.wait()
         self.wait()
 
         # Terceira uma cena
