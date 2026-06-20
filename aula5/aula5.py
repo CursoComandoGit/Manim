@@ -78,6 +78,8 @@ class segundoConjuntoRegras(Scene):
         sublinhado1 = Underline(VGroup(*rendered_codeCompras.code_lines[2][19:34]), stroke_width = 1.6)
         sublinhado2 = Underline(VGroup(*rendered_codeCompras.code_lines[9]), stroke_width = 1.6)
         sublinhado3 = Underline(VGroup(*rendered_codeCompras.code_lines[10]), stroke_width = 1.6)
+        sublinhadoT = Underline(VGroup(*rendered_codeCompras.code_lines[4]), stroke_width = 1.6)
+
 
         # atribuição
         sublinhado4 = rendered_codeCompras.code_lines[12]
@@ -86,12 +88,14 @@ class segundoConjuntoRegras(Scene):
         sublinhado1.shift(UP * 0.05)
         sublinhado2.shift(UP * 0.05)
         sublinhado3.shift(UP * 0.05)
+        sublinhadoT.shift(UP * 0.05)
 
-        self.play(Create(sublinhado1))
         self.play(Create(sublinhado2))
         self.play(Create(sublinhado3))
+        self.play(Create(sublinhado1))
+        self.play(Create(sublinhadoT))
 
-        self.play(Uncreate(sublinhado1), Uncreate(sublinhado2), Uncreate(sublinhado3))
+        self.play(Uncreate(sublinhado2), Uncreate(sublinhado3), Uncreate(sublinhado1), Uncreate(sublinhadoT))
         self.wait()
 
         self.play(
@@ -161,7 +165,7 @@ class segundoConjuntoRegras(Scene):
             stroke_width=3,
             tip_length=0.15
         )
-        setaCalcular.set_color(YELLOW)
+        setaCalcular.set_color(PURE_YELLOW)
 
         self.play(Create(setaCalcular))
         self.wait(2)
@@ -208,11 +212,11 @@ class tipoInt(Scene):
                 }
         ).scale(0.6).move_to(ORIGIN)
 
-        sublinhadoInt = Underline(VGroup(*rendered_codeCompras.code_lines[9][0:3]), stroke_width = 1.6)
-        sublinhadoInt.shift(UP * 0.05)
+        # sublinhadoInt = Underline(VGroup(*rendered_codeCompras.code_lines[9][0:3]), stroke_width = 1.6)
+        # sublinhadoInt.shift(UP * 0.05)
 
-        sublinhadoAtribuiçao = Underline(VGroup(*rendered_codeCompras.code_lines[12][11:12]), stroke_width = 1.6)
-        sublinhadoAtribuiçao.shift(UP * 0.05)
+        # sublinhadoAtribuiçao = Underline(VGroup(*rendered_codeCompras.code_lines[12][11:12]), stroke_width = 1.6)
+        # sublinhadoAtribuiçao.shift(UP * 0.05)
 
         nomeRect = Rectangle(width=2.5, height=0.6)
         valorRect = Rectangle(width=1, height=0.6)
@@ -259,15 +263,15 @@ class tipoInt(Scene):
         )
         
         self.play(FadeIn(rendered_codeCompras))
-        self.play(Create(sublinhadoInt))
-        self.wait()
+        # self.play(Create(sublinhadoInt))
+        # self.wait()
         
-        self.wait()
-        self.play(Create(sublinhadoAtribuiçao))
+        # self.wait()
+        # self.play(Create(sublinhadoAtribuiçao))
 
-        self.wait(2)
-        self.play(Uncreate(sublinhadoInt))
-        self.play(Uncreate(sublinhadoAtribuiçao))
+        # self.wait(2)
+        # self.play(Uncreate(sublinhadoInt))
+        # self.play(Uncreate(sublinhadoAtribuiçao))
 
         self.play(rendered_codeCompras.animate.scale(0.8))
         self.play(rendered_codeCompras.animate.shift(LEFT * 2.5), run_time=1.2, rate_func=smooth)
@@ -358,8 +362,16 @@ class tipoFloat(Scene):
         sublinhadoFloat = Underline(VGroup(*rendered_codeCompras.code_lines[10]), stroke_width = 1.6)
         sublinhadoFloat.shift(UP * 0.05)
         
-        destacarPreco = VGroup(*rendered_codeCompras.code_lines[14])
-        
+        # destacarPreco = VGroup(*rendered_codeCompras.code_lines[14])
+
+        valor_codigo = VGroup(*rendered_codeCompras.code_lines[14][14:19])
+
+        decimal = DecimalNumber(0,num_decimal_places = 2, font_size=valor_codigo.height * 160).move_to(valor_codigo.get_center())
+        decimal.stretch(1.15, dim=0)
+      
+        decimal.match_color(valor_codigo)
+        decimal.set_color(valor_codigo[0].get_color())
+   
 
         self.play(Write(tituloFloat))
         self.play(tituloFloat.animate.move_to([0,2.5,0]))
@@ -382,14 +394,20 @@ class tipoFloat(Scene):
 
         self.play(FadeIn(rendered_codeCompras))
         self.play(Create(sublinhadoFloat))
+        self.wait()
+        # Esconde o 10.50
+        valor_codigo.set_opacity(0)
+        self.add(decimal)
+        
+        self.play(ChangeDecimalToValue(decimal, 10.50), run_time=3)
 
-        self.wait(2)
+        # self.wait(2)
 
-        self.play(
-            destacarPreco.animate.scale(1.3),
-            rate_func = there_and_back,
-            run_time = 0.8
-        )
+        # self.play(
+        #     destacarPreco.animate.scale(1.3),
+        #     rate_func = there_and_back,
+        #     run_time = 0.8
+        # )
         self.wait()
         self.play(
             *[FadeOut(mob) for mob in self.mobjects]
@@ -464,7 +482,7 @@ int main()
             charTerminal.get_bottom() + DOWN * 0.1,
             grupoExplicacao.get_right()+ RIGHT * 0.1,
             angle=-PI/4,
-            color=YELLOW,
+            color=PURE_YELLOW,
             stroke_width=3,
             tip_length=0.15
         )
@@ -584,14 +602,14 @@ int main()
         self.play(
             Flash(
                 trechoAspasSimples1,
-                color=YELLOW,
+                color=PURE_YELLOW,
                 line_length=0.1,
                 flash_radius=0.06,
                 num_lines=8
             ),
             Flash(
                 trechoAspasSimples2,
-                color=YELLOW,
+                color=PURE_YELLOW,
                 line_length=0.1,
                 flash_radius=0.06,
                 num_lines=8
@@ -602,14 +620,14 @@ int main()
         self.play(
             Flash(
                 trechoAspasDuplas1,
-                color=YELLOW,
+                color=PURE_YELLOW,
                 line_length=0.1,
                 flash_radius=0.06,
                 num_lines=8
             ),
             Flash(
                 trechoAspasDuplas2,
-                color=YELLOW,
+                color=PURE_YELLOW,
                 line_length=0.1,
                 flash_radius=0.06,
                 num_lines=8
@@ -715,7 +733,7 @@ class globalLocal(Scene):
         escopo.move_to(ORIGIN)
         escopo.set_opacity(0.2)
 
-        globalTitulo = Text("Global", font_size = 80).scale(0.5)
+        globalTitulo = Text("Global", font_size = 100).scale(0.5)
         globalTitulo.move_to([0, 3, 0])
 
         arquivo = Rectangle(
@@ -838,7 +856,7 @@ class globalLocal(Scene):
         podeManipular = Text("Pode ser manipulada por:", font_size = 80).scale(0.2)
         podeManipular.next_to(tronco, LEFT)
 
-        localTitulo = Text("Local", font_size = 80).scale(0.5)
+        localTitulo = Text("Local", font_size = 100).scale(0.5)
         localTitulo.move_to([0, 3, 0])
 
         p0_local = localCodigo.get_left() + LEFT * 0.52
@@ -1115,6 +1133,18 @@ class cuidado(Scene):
             grupoAviso.animate.shift(RIGHT * 5.6),
             run_time=2
         )
+        
+        boxAviso = (
+            SurroundingRectangle(
+                grupoAviso,
+                corner_radius=0.3,
+                buff=0.2
+            )
+            .set_stroke("#AA77C7", width=2)
+            .set_fill("#8728BE", opacity=0.1)
+        )
+        
+        self.play(Create(boxAviso))
         self.wait()
         self.play(
             *[FadeOut(mob) for mob in self.mobjects]
