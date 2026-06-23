@@ -6,6 +6,18 @@ MarkupText.set_default(font = "Manrope")
 Circumscribe.set_default(color=WHITE)
 Indicate.set_default(color="#AA77C7")
 
+def fix_cap(mob):
+    for m in mob.family_members_with_points():
+        m.set_cap_style(CapStyleType.BUTT)
+    return mob
+
+def TX(texto, **kwargs):
+    return fix_cap(Text(texto, **kwargs))
+
+
+def T(texto, **kwargs):
+    return fix_cap(Tex(texto, **kwargs))
+
 def codigoComando(codeMedia: str, show_background=False):
     if not isinstance(codeMedia, str):
         raise TypeError("Passe uma string (o código ) como parâmetro")
@@ -24,22 +36,18 @@ def codigoComando(codeMedia: str, show_background=False):
     code.scale(1)
     return code
 
-class aulaCompleta(MovingCameraScene):
+class AulaCompleta(MovingCameraScene):
     def construct(self):
         # ----------- Cenas -----------
         Inicio.construct(self)
-        #--------PARTE1---------
         HelloWorld.construct(self)
-        #GRAVAÇÃO DE TELA
         Funcao.construct(self)
         TiposFuncoes.construct(self)
         Curiosidade.construct(self)
-        #PARTE2
         animacaoAntigaWindows.construct(self)
         alunoPassou.construct(self)
         simMas.construct(self)
         codigo5vezes.construct(self)
-        #--------PARTE3---------
         Main.construct(self)
         Paradigma.construct(self)
         Importar.construct(self)
@@ -47,6 +55,7 @@ class aulaCompleta(MovingCameraScene):
         Biblioteca.construct(self)
         Aprender.construct(self)
         Final.construct(self)
+        Creditos.construct(self)
 
 class Inicio(MovingCameraScene):
     def construct(self):
@@ -766,15 +775,15 @@ double calcularMedia(float n1, float n2) {
 int main() {
     // printf() e scanf() omitidos para melhorar visualização
 
-    double media1 = calcularMedia(a1,b1)
+    double media1 = calcularMedia(a1,b1);
 
-    double media2 = calcularMedia(a2,b2)
+    double media2 = calcularMedia(a2,b2);
 
-    double media3 = calcularMedia(a3,b3)
+    double media3 = calcularMedia(a3,b3);
 
-    double media4 = calcularMedia(a4,b4)
+    double media4 = calcularMedia(a4,b4);
 
-    double media5 = calcularMedia(a5,b5)
+    double media5 = calcularMedia(a5,b5);
 }'''
         codeRenderLimpo = Code(code_string=codeLimpo, 
             language="c",
@@ -819,15 +828,15 @@ class Main(Scene):
         mainstring1 = '''int main(){
     // printf() e scanf() omitidos para melhor visualização
         
-    double media1 = calcularMedia(a1, b1)
+    double media1 = calcularMedia(a1, b1);
 
-    double media2 = calcularMedia(a2, b2)
+    double media2 = calcularMedia(a2, b2);
 
-    double media3 = calcularMedia(a3, b3)
+    double media3 = calcularMedia(a3, b3);
 
-    double media4 = calcularMedia(a4, b4)
+    double media4 = calcularMedia(a4, b4);
 
-    double media5 = calcularMedia(a5, b5)
+    double media5 = calcularMedia(a5, b5);
 }'''
         codmain = codigoComando(mainstring1).move_to(ORIGIN).scale(0.8)
 
@@ -1021,15 +1030,63 @@ class Final(MovingCameraScene):
         final_text2 = Text("Variáveis e tipos de dados",font_size=75, t2c={'Variáveis': PURPLE})
         final = VGroup(final_text1, final_text2).arrange(DOWN, buff=0.3, aligned_edge=LEFT).scale(.7)
 
-        logo = ImageMobject("assets/icon_c.png").scale(0.2)
-        logoOrigin=logo.copy().move_to(UP*8).rotate(PI)
-        # O cursor
-        cursorVinheta=ImageMobject("assets/cursor.png").move_to(DOWN*6+LEFT*2).scale(0.05)
+
 
         # ----------- Animações -----------
 
         self.play(Write(final))
         self.wait()
+
+class Creditos(Scene):
+    def construct(self):
+        #creditos
+        logo = ImageMobject("assets/icon_c.png").scale(0.2)
+        logoOrigin=logo.copy().move_to(UP*8).rotate(PI)
+        cursor=ImageMobject("assets/cursor.png").move_to(DOWN*6+LEFT*2).scale(0.05)
+        titulo=Text("Créditos", font_size=80)
+        titulo.color="#AA77C7"
+
+   
+        diretor = VGroup(T("Diretor", color = "#AA77C7", font_size=60), T("Rainier R. Waki", font_size=50)).arrange(DOWN, buff=0.3)
+        tutor = VGroup(T("Tutor", color = "#AA77C7", font_size=60), T("Alyson V. Isaluski", font_size=50)).arrange(DOWN, buff=0.3)
+        redator = VGroup(T("Redator", color = "#AA77C7", font_size=60), T("Eduardo M. de Souza", font_size=50)).arrange(DOWN, buff=0.3)
+        animadores = VGroup(
+            T("Animadores", color = "#AA77C7", font_size=60),
+            VGroup(
+                T("Natália S. Kikuti", font_size=50),
+                T("Gabriel Covalski", font_size=50)
+            ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        editora = VGroup(T("Editora", color = "#AA77C7", font_size=60), T("Sophia B. Peraza", font_size=50)).arrange(DOWN, buff=0.3)
+        roteirista = VGroup(
+            T("Roteiristas", color = "#AA77C7", font_size=60),
+            VGroup(
+                T("Alyson V. Isaluski", font_size=50),
+                T("Kia de P. Marins", font_size=50)
+            ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        utfpr = ImageMobject("assets/utfpr.png").scale(0.7)
+        
+        creditos = VGroup(diretor, tutor, redator, animadores).scale(0.6)
+        creditos2= VGroup(editora, roteirista).scale(0.6)
+
+        for bloco in creditos:
+            if isinstance(bloco, VGroup):
+                bloco.arrange(DOWN, aligned_edge=LEFT)
+
+        for bloco in creditos2:
+            if isinstance(bloco, VGroup):
+                bloco.arrange(DOWN, aligned_edge=LEFT)
+
+        creditos.arrange(DOWN, aligned_edge=LEFT, buff=0.4)
+        creditos.to_edge(LEFT, buff=0.5).shift(UP*0.2)
+
+        creditos2.arrange(DOWN, aligned_edge=LEFT, buff=0.4)
+        creditos2.to_edge(LEFT, buff=0.5).shift(UP*0.2)
+
+        utfpr.scale(0.4)
+        utfpr.move_to(DOWN*3.5)
+        utfpr.to_edge(LEFT, buff=0.5)
 
         self.play(
             logoOrigin.animate.become(logo),
@@ -1037,11 +1094,19 @@ class Final(MovingCameraScene):
         )
 
         # Cursor aparece e se move
-        self.play(cursorVinheta.animate.move_to(ORIGIN+RIGHT*0.25+DOWN*0.45))
-        self.play(cursorVinheta.animate.scale(0.8),run_time=0.1,rate_func=linear)  # Clica
-        self.play(cursorVinheta.animate.scale(1.2),run_time=0.1,rate_func=linear)  #
-        
+        self.play(cursor.animate.move_to(ORIGIN+RIGHT*0.25+DOWN*0.45))
+        self.play(cursor.animate.scale(0.8), run_time=0.1, rate_func=linear)  # Clica
+        self.play(cursor.animate.scale(1.2), run_time=0.1, rate_func=linear)  #
+
         # Vinheta Puxada
         self.play(
-            GrowFromCenter(Rectangle(color="#0A0A0A",fill_opacity=1,width=20, height=10),run_time=0.5)
+            GrowFromCenter(Rectangle(color="#0A0A0A", fill_opacity=1, width=20, height=10), run_time=0.5)
         )
+
+        # Nomes e Cargos
+        self.play(Write(creditos),FadeIn(utfpr))
+        self.wait()
+        self.play(FadeOut(creditos))
+        self.play(Write(creditos2))
+        self.wait()
+        self.play(FadeOut(creditos2),FadeOut(utfpr))
