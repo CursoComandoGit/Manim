@@ -4,6 +4,80 @@ from objetoFisico import ObjetoFisico
 import numpy as np
 from customTerminal import CustomTerminal
 
+def criaCapitulo(cena : Scene, titulo : Text, descricao = Text(""), numero = 1, comFade = False):
+        
+    cena.play(*[obj.animate.set_opacity(0) for obj in cena.mobjects])
+    ntext = Text(
+        f"Capítulo {numero}",
+        color=WHITE,
+        font="Segoe UI",
+        weight=THIN,
+        font_size=80
+    ).scale(0.5)
+
+    grupoCompleto = VGroup(ntext, titulo, descricao)
+
+    grupoCompleto.arrange(DOWN, buff=0.75)
+    grupoCompleto[-1].move_to(grupoCompleto[-2].get_bottom()+[0,-0.25,0], aligned_edge=UP)
+
+    grupoCompleto.center()
+
+    if comFade:
+        anim = LaggedStart(
+            FadeIn(ntext, shift=UP * 0.3),
+            FadeIn(titulo, shift=UP * 0.3),
+            FadeIn(descricao, shift=UP * 0.3),
+            lag_ratio=0.5
+        )
+
+        animR = LaggedStart(
+            FadeOut(descricao, shift=DOWN * 0.3),
+            FadeOut(titulo, shift=DOWN * 0.3),
+            FadeOut(ntext, shift=DOWN * 0.3),
+            lag_ratio=0.25
+        )
+    else:
+        anim = Write(descricao)
+        
+        animR = AnimationGroup(FadeOut(descricao), FadeOut(titulo), FadeOut(ntext))
+
+    if not comFade:
+        cena.add(ntext)
+        cena.wait(0.75)
+        cena.add(titulo)
+        cena.wait(0.1)
+    cena.play(anim, rate_func=rate_functions.ease_in_out_back, run_time=2.5)
+    cena.wait(0.75)
+    cena.play(animR)
+    cena.remove(grupoCompleto)
+    cena.play(*[obj.animate.set_opacity(1) for obj in cena.mobjects])
+    
+    cena.wait()
+
+
+def alyBemAly(target_point=ORIGIN, num_arrows=15, min_dist=0.5, max_dist=3.0, arrow_length=1.5,
+              off_screen_offset=15.0, run_time=1.5, lag_ratio=0.05, leave_after = True, time_until_leave = 1) -> Succession:
+    animations = []
+    arrows = VGroup()
+    for _ in range(num_arrows):
+        angulo = np.random.uniform(0, 2 * PI)
+        
+        direcao = np.array([np.cos(angulo), np.sin(angulo), 0])
+        dist = np.random.uniform(min_dist, max_dist)
+
+        final = target_point + dist * direcao
+        finalTail = final + arrow_length * direcao
+
+        arrow = Arrow(start=finalTail, end=final, buff=0)
+        arrows.add(arrow)
+        arrow.shift(off_screen_offset * direcao)
+
+        anim = arrow.animate(run_time=run_time).shift(-off_screen_offset * direcao)
+        animations.append(anim)
+
+    if leave_after:
+        return Succession(AnimationGroup(*animations, lag_ratio=lag_ratio), Wait(time_until_leave), arrows.animate.set_opacity(0))
+    return Succession(AnimationGroup(*animations, lag_ratio=lag_ratio))
 Circumscribe.set_default(color=WHITE)
 def get_highlight(code_obj : Code, line_index : int, color=WHITE, opacity=0.3, fill_screen = True, highlight_text_only = False) -> Rectangle:
     total_lines = len(code_obj.code_lines)
@@ -143,7 +217,7 @@ class Intro(Scene):
         corpo2 = Rectangle(BLACK, height=2.6, width=1.15).set_fill(DARK_BROWN, 1).move_to(corpo.get_left(), aligned_edge=RIGHT).shift([0,0.5,0])
         bola = Circle(radius=0.6, color=BLACK).set_fill(YELLOW, 1).move_to(corpo2.get_left(), aligned_edge=RIGHT)
         tag = SVGMobject("svgs\\tag").move_to(bola.get_right(), aligned_edge=UP).shift([-0.5,0.2,0])
-        bitsTag = Text("01", font="DejaVu Sans Mono", color=GREY).move_to(tag.get_center()).shift([0.18,-0.15,0]).rotate(25).scale(0.8)
+        bitsTag = Text("VAR", font="DejaVu Sans Mono", color=GREY).move_to(tag.get_center()).shift([0.175,-0.155,0]).rotate(25).scale(0.7)
 
         gaveta = VGroup(corpo, corpo2, bola, tag, bitsTag).move_to([10,0,0]).scale(0.8)
         self.add(gaveta)
@@ -151,24 +225,12 @@ class Intro(Scene):
                   arrow.animate.shift([-10,0,0]), variavel.animate.move_to([-2,0,0]),
                   gaveta.animate.move_to([5,0,0]))
         
-        bitsGaveta1 = Text("00101", font="DejaVu Sans Mono").scale(0.5).move_to(corpo.get_top()).shift([0,1,0])
-        bitsGaveta2 = Text("10101", font="DejaVu Sans Mono").scale(0.5).move_to(corpo.get_top()).shift([0.2,1.8,0])
-        bitsGaveta3 = Text("01100", font="DejaVu Sans Mono").scale(0.5).move_to(corpo.get_top()).shift([-0.8,2.2,0])
-        bitsGaveta4 = Text("01111", font="DejaVu Sans Mono").scale(0.5).move_to(corpo.get_top()).shift([-1.2,1.2,0])        
-        bitsGaveta5 = Text("11111", font="DejaVu Sans Mono").scale(0.5).move_to(corpo.get_top()).shift([-0.1,0.6,0])
+        bitsGaveta1 = Text("00101", font="DejaVu Sans Mono").scale(1).move_to(corpo.get_top()).shift([0,1,0])
 
-        self.play(Succession(GrowFromPoint(bitsGaveta1, corpo.get_top()),
-                  GrowFromPoint(bitsGaveta2, corpo.get_top()),
-                  GrowFromPoint(bitsGaveta3, corpo.get_top()),
-                  GrowFromPoint(bitsGaveta4, corpo.get_top()),
-                  GrowFromPoint(bitsGaveta5, corpo.get_top())), run_time=0.5)
+        self.play(Succession(GrowFromPoint(bitsGaveta1, corpo.get_top(), run_time=0.5)))
         self.wait()
 
-        self.play(bitsGaveta1.animate.scale(0).move_to(corpo.get_top()),
-                  bitsGaveta2.animate.scale(0).move_to(corpo.get_top()),
-                  bitsGaveta3.animate.scale(0).move_to(corpo.get_top()),
-                  bitsGaveta4.animate.scale(0).move_to(corpo.get_top()),
-                  bitsGaveta5.animate.scale(0).move_to(corpo.get_top()))
+        self.play(bitsGaveta1.animate.scale(0).move_to(corpo.get_top()))
         
         self.play(variavel.animate.center(),
                   gaveta.animate.move_to([11,0,0]))
@@ -182,7 +244,7 @@ class CriandoAVariavel(Scene):
     def construct(self):
         codigoString = '''#include <stdio.h>
 
-void main(){
+int main() {
 
     int quantidade;
 
@@ -209,6 +271,11 @@ void main(){
         self.wait(0.5)
         self.play(Circumscribe(exemploCodigo.code_lines[2][11], color=WHITE), Circumscribe(exemploCodigo.code_lines[6], color=WHITE))
         self.wait(0.5)
+
+        titulo = Text("Declaração de variável", weight=BOLD, t2c={"variável":"#AA77C7"}, font_size = 100).scale(0.6)
+        descr = Text("Sintaxe básica", weight=BOLD, font_size = 100).scale(0.3)
+        criaCapitulo(self, titulo, descr, 1, True)
+
         self.play(Indicate(exemploCodigo.code_lines[4][4:8], color=BLUE))
         self.wait(0.5)
         self.play(Indicate(exemploCodigo.code_lines[4][8:18], color=WHITE))
@@ -220,14 +287,14 @@ void main(){
 
 class RegrasNome(Scene):
     def construct(self):
-        title = Text("Regras para nomes de variável", t2c={"nomes":PURPLE}, font_size = 45)
+        title = Text("Regras para nomes de variável", weight=BOLD, t2c={"nomes":"#AA77C7"}, font_size = 100).scale(0.6)
 
         self.play(Write(title))
         self.wait()
         self.play(FadeOut(title))
         codigoString = '''#include <stdio.h>
 
-void main(){
+int main(){
     int quantidade;
     int QuAntiDaDe;
     char comando_c;
@@ -258,7 +325,7 @@ void main(){
         #Mostrando exemplo ruim
         codigoString = '''#include <stdio.h>
 
-void main(){
+int main(){
     int quantidade;
     int QuAntiDaDe;
     char comando_c;
@@ -271,7 +338,7 @@ void main(){
         exampleCode2 = Code(code_string=codigoString,
             tab_width=4,
             language="C",
-            formatter_style= "material", 
+            formatter_style= "material",
             add_line_numbers=False,
             background_config = {"stroke_opacity" : 0,  "fill_opacity":0})
         
@@ -290,7 +357,7 @@ void main(){
         #Mostrando último incorreto sintaxe
         codigoString = '''#include <stdio.h>
 
-void main(){
+int main(){
     int quantidade;
     int QuAntiDaDe;
     char comando_c;
@@ -349,7 +416,7 @@ void main(){
         #Nome melhor animação
         codigoString = '''#include <stdio.h>
 
-void main(){
+int main(){
     int quantidade;
     int QuAntiDaDe;
     char comando_c;
@@ -391,22 +458,11 @@ class CaseSensitive(Scene):
         diferente = MathTex(r"\neq")
         copyDiferente = diferente.copy()
         
-        #Simulando espaço dos elementos
-        n0meS = Text("n0me", color=YELLOW_B, font="DejaVu Sans Mono").scale(0.75)
-        maisUmDiferenteS = MathTex(r"\neq").scale(0.75)
-
-        n0me = Text("n0me", color=YELLOW_B, font="DejaVu Sans Mono").scale(0.75).move_to([10,0,0])
-        maisUmDiferente = MathTex(r"\neq").scale(0.75).move_to([9,0,0])
         nomes = VGroup(nome, diferente, Nome, copyDiferente, noMe).arrange(buff=1.05).scale(0.75)
-        copiaNomes = nomes.copy()
-        novoNome = VGroup(copiaNomes, maisUmDiferenteS, n0meS).arrange(buff=1.05)
 
         self.play(Write(nomes))
         self.wait()
 
-        self.play(Transform(nomes, copiaNomes),n0me.animate.move_to(n0meS.get_center()), maisUmDiferente.animate.move_to(maisUmDiferenteS.get_center())
-                  ,rate_func=rate_functions.ease_in_out_back)
-        self.wait()
         self.play(FadeOut(*self.mobjects))
         self.clear()
 
@@ -414,11 +470,10 @@ class Atribucao(MovingCameraScene):
     def construct(self):
         codigoString = '''#include <stdio.h>
 
-void main(){
+int main() {
     int quantidade;
     quantidade = 3;
 
-    printf("Quantidade: %d", quantidade);
 }
 '''
         exampleCode = Code(code_string=codigoString,
@@ -433,15 +488,33 @@ void main(){
         self.wait()
         self.play(Circumscribe(exampleCode.code_lines[4][15:17], color=WHITE))
         self.wait()
-        self.play(Circumscribe(exampleCode.code_lines[3][4:8], color=WHITE),
-                  Circumscribe(exampleCode.code_lines[4][17:18], color=WHITE), run_time=1.2)
+        self.play(Circumscribe(exampleCode.code_lines[2][11:12], color=WHITE),
+                  Circumscribe(exampleCode.code_lines[6][0:1], color=WHITE), run_time=1.2)
+        self.wait()
+        exampleCode.save_state()
+        self.play(exampleCode.code_lines[3][18:19].animate.scale(1.25).shift([0.5,0,0]))
+        self.play(alyBemAly(exampleCode.code_lines[3][18:19].get_center(), 8, 0.1, 1, 1, run_time=1))
+        self.wait()
+        self.play(Restore(exampleCode))
+        self.wait(2)
+        recebe = Arrow(exampleCode.code_lines[4][17:18].get_left() + [1,0,0], exampleCode.code_lines[4][14:15].get_right())
+        exampleCode.save_state()
+        self.wait()
+        self.play(Transform(exampleCode.code_lines[4][15:17], recebe), exampleCode.code_lines[4][17:19].animate.shift([1,0,0]))
+        self.wait()
+        self.play(Restore(exampleCode))
+
+        self.play(Swap(exampleCode.code_lines[4][4:14], exampleCode.code_lines[4][17:18]),
+                  exampleCode.code_lines[4][15:17].animate.shift([-1,0,0]), exampleCode.code_lines[4][18:19].animate.shift([1,0,0]))
+        self.wait()
+        self.play(Swap(exampleCode.code_lines[4][4:14], exampleCode.code_lines[4][17:18]),
+                  exampleCode.code_lines[4][15:17].animate.shift([1,0,0]), exampleCode.code_lines[4][18:19].animate.shift([-1,0,0]))
         self.wait()
         codigoString = '''#include <stdio.h>
 
-void main(){
+int main(){
     int quantidade = 3;
 
-    printf("Quantidade: %d", quantidade);
 }
 '''
         exampleCode2 = Code(code_string=codigoString,
@@ -454,12 +527,11 @@ void main(){
         self.wait(2)
         codigoString = '''#include <stdio.h>
 
-void main(){
+int main() {
     int quantidade, valor;
     quantidade = 3;
     valor = 10;
 
-    printf("Quantidade: %d, Valor: %d", quantidade, valor);
 }
 '''
         exampleCode3 = Code(code_string=codigoString,
@@ -469,6 +541,7 @@ void main(){
             add_line_numbers=False,
             background_config = {"stroke_opacity" : 0,  "fill_opacity":0})
         self.play(Transform(exampleCode, exampleCode3))
+        self.wait()
         self.play(Circumscribe(exampleCode.code_lines[3][19: 20], color=WHITE))
         self.wait()
         #Um monte de atribuição
@@ -532,8 +605,8 @@ void main(){
     quantidade = 128;
     valor = 33;
     valor = 1024;
-    quantidade = 6;
-    printf("Quantidade: %d, Valor: %d", quantidade, valor);
+    quantidade = 3;
+
 }
 '''
         nAtribuicoes= Code(code_string=strAtribuicoes,
@@ -546,142 +619,199 @@ void main(){
 
         self.play(exampleCode.code_lines[6:].animate.move_to([0,-15,0]))
         self.play(exampleCode.code_lines[6:].animate.scale(0), run_time=0.2)
-        self.play(nAtribuicoes.animate.move_to(exampleCode.code_lines[6].get_bottom()+[0,-0.25,0], aligned_edge=UP), rate_func=rate_functions.ease_in_out_back)
+        self.play(nAtribuicoes.animate.move_to(exampleCode.code_lines[6].get_bottom()+[-0.5,-0.5,0], aligned_edge=UP), rate_func=rate_functions.ease_in_out_back)
         self.wait()
-        self.play(self.camera.frame.animate.move_to([0,-20,0]))
+        self.play(self.camera.frame.animate.move_to([0,-24,0]))
+        self.wait(2)
+        nAtribuicoes.save_state()
+
+        ram = Text("RAM").move_to([3,-22,0]).scale(0.8)
+        box = Rectangle(height=3.2, width=2.8).move_to([3,-24,0])
+        question = Text("quantidade = ?").scale(0.5).move_to(box.get_center())
+        memory = VGroup(ram, box)
+        self.play(nAtribuicoes.animate.shift([-1,0,0]))
+        self.play(GrowFromPoint(memory, nAtribuicoes.code_lines[-3][4:].get_right()))
+        self.play(GrowFromCenter(question))
+        self.wait()
+        self.play(FadeOut(memory, question))
+        self.wait()
+        self.play(Restore(nAtribuicoes))
+        self.wait()
+        #Printf aparece novamente na aula 5!
+        sPrint = '''
+    printf("Quantidade: %d \\n", quantidade);
+}
+'''
+        nPrint = Code(code_string=sPrint,
+            tab_width=4,
+            language="C",
+            formatter_style= "material", 
+            add_line_numbers=False,
+            background_config = {"stroke_opacity" : 0,  "fill_opacity":0}).move_to([2.125,-30,0])
+
+        lastBottom = nAtribuicoes.code_lines[-3].get_bottom()
+        self.play(nAtribuicoes.code_lines[-1].animate.shift([0,-10,0]))
+        self.play(nPrint.animate.move_to(lastBottom + [2.125, 0,0], aligned_edge=UP), rate_func=rate_functions.ease_in_out_back)
+        self.wait(2)
+
+        self.play(nPrint.code_lines[-1].animate.shift([0,-14,0]), nAtribuicoes.code_lines[0:-2].animate.shift([0,9,0]),
+                  nPrint.code_lines[-2].animate.move_to([0,-25,0]))
         
+        self.wait()
+        self.play(Indicate(nPrint.code_lines[-2][24:26]))
+        self.wait()
+        self.play(Circumscribe(nPrint.code_lines[-2][30:31], color=WHITE))
+        self.wait()
+        self.play(Indicate(nPrint.code_lines[-2][32:42]))
+        output = Text("Quantidade: 3").move_to([0,-22,0])
+        self.play(AddTextLetterByLetter(output))
+
+        self.wait(2)
         self.play(FadeOut(*self.mobjects))
         self.clear()
         self.play(self.camera.frame.animate.move_to(ORIGIN))
 
+#Ponderando em remover completamente
 class calculandoCorretamente(Scene):
     def construct(self):
-        codeCompras = '''   #include <stdio.h>
+        # codeCompras = '''   #include <stdio.h>
 
-        float calcularTotal(int qtd, float uni)
-        {
-            float t = qtd * uni;
-            return t;
+        # float calcularTotal(int qtd, float uni)
+        # {
+        #     float t = qtd * uni;
+        #     return t;
+        # }
+
+        # int main() {
+        #     int quantidade;
+        #     float precoUnitario, total; 
+            
+        #     quantidade = 3;
+        #     //char quantidade = '3'
+        #     precoUnitario = 10.50;
+
+        #     total = calcularTotal(quantidade, precoUnitario);
+
+        #     printf("Quantidade: %d \\n Preço unitário: %f\\n", 
+        #     quantidade, precoUnitario);
+
+        #     printf("Total a pagar: R$ %.2f\\n", total);
+            
+        #     return 0;
+        # }'''
+        # rendered_codeCompras = Code(
+        #     code_string=codeCompras, 
+        #     language="c",
+        #     formatter_style="material",
+        #     add_line_numbers=False,
+        #     background="rectangle", 
+        #     background_config={
+        #         "fill_opacity": 0,
+        #         "stroke_width": 0
+        #         }
+        # ).scale(0.6).move_to(ORIGIN)
+
+        # LinhaTotal = [
+        #     linha.animate.set_opacity(0.2)
+        #     for linha in rendered_codeCompras.code_lines
+        # ]
+
+        # LinhaTotal.append(
+        #     rendered_codeCompras.code_lines[16].animate.set_opacity(1)
+        # )
+
+        # interrogacao = Text("?", font_size = 130, color = BLUE)
+
+        # destacarPrintf = rendered_codeCompras.code_lines[21]
+
+
+        # self.play(FadeIn(rendered_codeCompras))
+        # rendered_codeCompras.save_state()
+
+        # self.play(*LinhaTotal)
+        # self.play(rendered_codeCompras.code_lines[16].animate.scale(1.6))
+        # interrogacao.next_to(rendered_codeCompras.code_lines[16], UP * 4)
+        # self.play(FadeIn(interrogacao))
+        # self.play(ShrinkToCenter(interrogacao))
+        # self.play(Restore(rendered_codeCompras))
+        # self.play(Circumscribe(destacarPrintf, buff=0.05, fade_out=True, color=WHITE, stroke_width = 1.4), run_time=2)
+        # self.wait()
+        # rendered_codeCompras.save_state()
+        # printfFormatacao = rendered_codeCompras.code_lines[18]
+        # printfFormatacao2 = rendered_codeCompras.code_lines[19]
+        # LinhaPrintf = [
+        #     linha.animate.set_opacity(0)
+        #     for linha in rendered_codeCompras.code_lines
+        # ]
+
+        # LinhaPrintf.extend([
+        #     rendered_codeCompras.code_lines[18].animate.set_opacity(1),
+        #     rendered_codeCompras.code_lines[19].animate.set_opacity(1)
+        # ])
+        # grupoPrintf = VGroup(printfFormatacao, printfFormatacao2)
+
+        # self.play(*LinhaPrintf)
+
+        # self.play(grupoPrintf.animate.scale(1.2).move_to([0, 2.5, 0]))
+        # sublinhadoPrintf = Underline(VGroup(*rendered_codeCompras.code_lines[18][8:41]), stroke_width = 1.6)
+        # sublinhadoPrintf.shift(UP * 0.05)
+
+        linhaPrinf = Code(
+             code_string=codeCompras, 
+             language="c",
+             formatter_style="material",
+             add_line_numbers=False,
+             background="rectangle", 
+             background_config={
+                 "fill_opacity": 0,
+                 "stroke_width": 0
         }
-
-        int main() {
-            int quantidade;
-            float precoUnitario, total; 
-            
-            quantidade = 3;
-            //char quantidade = '3'
-            precoUnitario = 10.50;
-
-            total = calcularTotal(quantidade, precoUnitario);
-
-            printf("Quantidade: %d \\n Preço unitário: %f\\n", 
-            quantidade, precoUnitario);
-
-            printf("Total a pagar: R$ %.2f\\n", total);
-            
-            return 0;
-        }'''
-        rendered_codeCompras = Code(
-            code_string=codeCompras, 
-            language="c",
-            formatter_style="material",
-            add_line_numbers=False,
-            background="rectangle", 
-            background_config={
-                "fill_opacity": 0,
-                "stroke_width": 0
-                }
         ).scale(0.6).move_to(ORIGIN)
-
-        LinhaTotal = [
-            linha.animate.set_opacity(0.2)
-            for linha in rendered_codeCompras.code_lines
-        ]
-
-        LinhaTotal.append(
-            rendered_codeCompras.code_lines[16].animate.set_opacity(1)
-        )
-
-        interrogacao = Text("?", font_size = 130, color = BLUE)
-
-        destacarPrintf = rendered_codeCompras.code_lines[21]
-
-
-        self.play(FadeIn(rendered_codeCompras))
-        rendered_codeCompras.save_state()
-
-        self.play(*LinhaTotal)
-        self.play(rendered_codeCompras.code_lines[16].animate.scale(1.6))
-        interrogacao.next_to(rendered_codeCompras.code_lines[16], UP * 4)
-        self.play(FadeIn(interrogacao))
-        self.play(ShrinkToCenter(interrogacao))
-        self.play(Restore(rendered_codeCompras))
-        self.play(Circumscribe(destacarPrintf, buff=0.05, fade_out=True, color=WHITE, stroke_width = 1.4), run_time=2)
-        self.wait()
-        rendered_codeCompras.save_state()
-        printfFormatacao = rendered_codeCompras.code_lines[18]
-        printfFormatacao2 = rendered_codeCompras.code_lines[19]
-        LinhaPrintf = [
-            linha.animate.set_opacity(0)
-            for linha in rendered_codeCompras.code_lines
-        ]
-
-        LinhaPrintf.extend([
-            rendered_codeCompras.code_lines[18].animate.set_opacity(1),
-            rendered_codeCompras.code_lines[19].animate.set_opacity(1)
-        ])
-        grupoPrintf = VGroup(printfFormatacao, printfFormatacao2)
-
-        self.play(*LinhaPrintf)
-
-        self.play(grupoPrintf.animate.scale(1.2).move_to([0, 2.5, 0]))
-        sublinhadoPrintf = Underline(VGroup(*rendered_codeCompras.code_lines[18][8:41]), stroke_width = 1.6)
-        sublinhadoPrintf.shift(UP * 0.05)
-
         porcentagem = Text("%", font_size = 80, color = BLUE)
         tipo = Text("tipo", font_size = 80, color = PURPLE)
         porcTipo = VGroup(porcentagem, tipo).arrange(RIGHT, buff = 0.15).move_to(ORIGIN)
 
-        self.play(Create(sublinhadoPrintf))
+        self.play(Create(linhaPrinf))
         self.play(GrowFromCenter(porcentagem))
         self.play(Write(tipo))
         self.wait()
+
         #Parte nova
-        self.play(porcTipo.animate.move_to([-4,0,0]).scale(0.75), FadeOut(sublinhadoPrintf))
-        self.wait()
+        # self.play(porcTipo.animate.move_to([-4,0,0]).scale(0.75), FadeOut(linhaPrintf))
+        # self.wait()
 
-        parametro = Text("valor", font_size = 80, color = PURPLE)
-        self.play(Write(parametro))
-        self.play(parametro.animate.move_to([4,0,0]).scale(0.75))
-        self.wait()
-        intExemplo = Text("51", font_size = 80, color = PURPLE).move_to(parametro.get_center())
-        self.play(Transform(parametro, intExemplo))
-        linha = DashedLine(start=parametro.get_left()+[-0.5,0,0], end=tipo.get_right()+[0.5,0,0])
-        self.play(Create(linha), run_time=0.6)
-        porcentoI = Text("i", font_size = 80, color = PURPLE).move_to(tipo.get_center(), aligned_edge=LEFT)
-        self.play(Transform(tipo, porcentoI))
-        self.wait()
+        # parametro = Text("valor", font_size = 80, color = PURPLE)
+        # self.play(Write(parametro))
+        # self.play(parametro.animate.move_to([4,0,0]).scale(0.75))
+        # self.wait()
+        # intExemplo = Text("51", font_size = 80, color = PURPLE).move_to(parametro.get_center())
+        # self.play(Transform(parametro, intExemplo))
+        # linha = DashedLine(start=parametro.get_left()+[-0.5,0,0], end=tipo.get_right()+[0.5,0,0])
+        # self.play(Create(linha), run_time=0.6)
+        # porcentoI = Text("i", font_size = 80, color = PURPLE).move_to(tipo.get_center(), aligned_edge=LEFT)
+        # self.play(Transform(tipo, porcentoI))
+        # self.wait()
 
-        self.play(Circumscribe(rendered_codeCompras.code_lines[18][21:32]), Circumscribe(rendered_codeCompras.code_lines[18][38:54]))
-        self.play(Circumscribe(rendered_codeCompras.code_lines[18][32:34]), Circumscribe(rendered_codeCompras.code_lines[18][54:56]))
-        self.wait()
+        # self.play(Circumscribe(rendered_codeCompras.code_lines[18][21:32]), Circumscribe(rendered_codeCompras.code_lines[18][38:54]))
+        # self.play(Circumscribe(rendered_codeCompras.code_lines[18][32:34]), Circumscribe(rendered_codeCompras.code_lines[18][54:56]))
+        # self.wait()
 
-        self.play(FadeOut(tipo, porcentagem, parametro, linha), Restore(rendered_codeCompras))
-        self.wait(2)
-        LinhaTotal = [
-            linha.animate.set_opacity(0.2)
-            for linha in rendered_codeCompras.code_lines
-        ]
+        # self.play(FadeOut(tipo, porcentagem, parametro, linha), Restore(rendered_codeCompras))
+        # self.wait(2)
+        # LinhaTotal = [
+        #     linha.animate.set_opacity(0.2)
+        #     for linha in rendered_codeCompras.code_lines
+        # ]
 
-        LinhaTotal.append(
-            rendered_codeCompras.code_lines[21].animate.set_opacity(1)
-        )
+        # LinhaTotal.append(
+        #     rendered_codeCompras.code_lines[21].animate.set_opacity(1)
+        # )
 
-        rendered_codeCompras.save_state()
+        # rendered_codeCompras.save_state()
 
-        self.play(*LinhaTotal)
-        self.play(rendered_codeCompras.code_lines[21].animate.scale(1.6))
-        self.play(Restore(rendered_codeCompras))
+        # self.play(*LinhaTotal)
+        # self.play(rendered_codeCompras.code_lines[21].animate.scale(1.6))
+        # self.play(Restore(rendered_codeCompras))
 
         self.wait()
         self.play(FadeOut(*self.mobjects))
@@ -1946,17 +2076,17 @@ class Main(MovingCameraScene):
     def construct(self):
         Intro.construct(self)
         CriandoAVariavel.construct(self)
-        RegrasNome.construct(self)
-        CaseSensitive.construct(self)
-        Atribucao.construct(self)
-        segundoConjuntoRegras.construct(self)
-        tipoInt.construct(self)
-        tipoFloat.construct(self)
-        tipoChar.construct(self)
-        tipoString.construct(self)
-        globalLocal.construct(self)
-        porExemplo.construct(self)
-        cuidado.construct(self)
-        calculandoCorretamente.construct(self)
-        Formatacao.construct(self)
-        Fim.construct(self)
+        #RegrasNome.construct(self)
+        #CaseSensitive.construct(self)
+        #Atribucao.construct(self)
+        #segundoConjuntoRegras.construct(self)
+        #tipoInt.construct(self)
+        #tipoFloat.construct(self)
+        #tipoChar.construct(self)
+        #tipoString.construct(self)
+        #globalLocal.construct(self)
+        #porExemplo.construct(self)
+        #cuidado.construct(self)
+        #calculandoCorretamente.construct(self)
+        #Formatacao.construct(self)
+        #Fim.construct(self)
