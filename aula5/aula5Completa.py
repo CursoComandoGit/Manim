@@ -3,6 +3,51 @@ import random
 from objetoFisico import ObjetoFisico
 import numpy as np
 from customTerminal import CustomTerminal
+def criar_card(nome, cor, exemplo):
+            caixa = RoundedRectangle(
+                width=2.2, height=2.4, corner_radius=0.2, color=cor, fill_color=cor, fill_opacity=0.15, stroke_width=3
+            )
+            rotulo_nome = Text(nome, font_size=30, color=cor, weight=BOLD, disable_ligatures=True)
+            rotulo_exemplo = Text(exemplo, font_size=26)
+            conteudo = VGroup(rotulo_nome, rotulo_exemplo).arrange(DOWN, buff=0.5)
+            conteudo.move_to(caixa.get_center())
+            return VGroup(caixa, conteudo)
+def update_int(mob, dt):
+    mob.tempo_acumulado += dt
+    
+    if mob.tempo_acumulado >= 0.5:
+        mob.tempo_acumulado -= 0.5
+        
+        numero_aleatorio = str(random.randint(1, 99))
+        novo_rotulo = Text(numero_aleatorio, font_size=26)
+        
+        novo_rotulo.move_to(mob[1][1].get_center())
+        
+        mob[1][1].become(novo_rotulo)
+def update_float(mob, dt):
+    mob.tempo_acumulado += dt
+    
+    if mob.tempo_acumulado >= 0.5:
+        mob.tempo_acumulado -= 0.5
+        
+        numero_aleatorio = str(round(random.uniform(1, 99), 2))
+        novo_rotulo = Text(numero_aleatorio, font_size=26)
+        
+        novo_rotulo.move_to(mob[1][1].get_center())
+        
+        mob[1][1].become(novo_rotulo)
+def update_char(mob, dt):
+    mob.tempo_acumulado += dt
+    characteres = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u","v","w","x","y","z"]
+    if mob.tempo_acumulado >= 0.5:
+        mob.tempo_acumulado -= 0.5
+        
+        
+        novo_rotulo = Text(characteres[random.randint(0, 25)], font_size=26)
+        
+        novo_rotulo.move_to(mob[1][1].get_center())
+        
+        mob[1][1].become(novo_rotulo)
 
 def criaCapitulo(cena : Scene, titulo : Text, descricao = Text(""), numero = 1, comFade = False):
         
@@ -186,27 +231,52 @@ class Intro(Scene):
                   bitSegment2.animate.set_opacity(0.5),
                   bitSegment3.animate.set_opacity(0.5), Succession(*[Transform(correspondingBits[i], things[i]) for i in range(0,int(len(textoCoisas)/2))]))
         self.play(Succession(*[Transform(correspondingBits[i], things[i]) for i in range(int(len(textoCoisas)/2), len(textoCoisas))]), run_time=0.5)
-        self.wait(0.2)
-        self.play(bitSegment.animate.scale(0).move_to([3,0,0]),
-                  bitSegment2.animate.scale(0).move_to([3,0,0]),
-                  bitSegment3.animate.scale(0).move_to([3,0,0]),
-                  correspondingBits.animate.scale(0).move_to([3,0,0]))
-        self.remove(bitSegment, bitSegment2, bitSegment3, correspondingBits, things)
+        self.wait(2)
+        self.remove(bitSegment, bitSegment2, bitSegment3, correspondingBits, things, scrolling_group)
+        #nova animação com cards
+        self.clear()
+        variavel = Text("variáveis", color=PURPLE)
+        self.add(variavel)
+        self.wait()
+        inteiro = criar_card("int", BLUE_D, "10").move_to([-3,-8,0])
+        flutuante = criar_card("float", RED_E, "11.2").move_to([0,-8,0])
+        charactere = criar_card("char", GREEN_C, 'c').move_to([3,-8,0])
+        definicao = Text("são nomes.").move_to([10,0,0])
+        self.play(variavel.animate.shift([0,0.5,0]), inteiro.animate.move_to([-3,-1.5,0]), flutuante.animate.move_to([0,-1.5,0]), charactere.animate.move_to([3,-1.5,0]))
+        inteiro.tempo_acumulado=0.0
+        flutuante.tempo_acumulado=0.0
+        charactere.tempo_acumulado=0.0
+        inteiro.add_updater(update_int)
+        flutuante.add_updater(update_float)
+        charactere.add_updater(update_char)
 
-        variavel = Text("variavel", color=PURPLE).move_to([3,0,0])
+        self.wait(2)
+        inteiro.clear_updaters()
+        flutuante.clear_updaters()
+        charactere.clear_updaters()
+        self.play(inteiro.animate.move_to([-3,-9,0]), flutuante.animate.move_to([0,-9,0]), charactere.animate.move_to([3,-9,0]),
+                  variavel.animate.center())
+        variavel.save_state()
+        grupo = VGroup(variavel, definicao)
+        self.play(grupo.animate.arrange(direction=RIGHT))
+        self.wait()
+        self.play(Restore(variavel), FadeOut(definicao))
+        self.play(variavel.animate.move_to([3,0,0]))
+
+        #Resume animação antiga
         ram = Text("RAM").move_to([-3,2,0]).scale(0.8)
         box = Rectangle(height=4, width=2.5).move_to([-3,-1,0])
 
-        self.play(GrowFromCenter(variavel))
         self.wait()
-        self.play(scrolling_group.animate.scale(0).move_to([-3,0,0]), GrowFromCenter(ram), GrowFromCenter(box))
-        self.remove(scrolling_group)
+        self.play(GrowFromCenter(ram), GrowFromCenter(box))
         arrow = CurvedArrow(variavel.get_left(), box.get_right()+[0,0.25,0], color=YELLOW)
         valor = Text("3").scale(0.8).move_to(arrow.get_end()+[-1,0,0])
         novoValor = Text("6").scale(0.8).move_to(arrow.get_end()+[-1,0,0])
-        novoValor2 = Text("12").scale(0.8).move_to(arrow.get_end()+[-1,0,0])
+        novoValor2 = Text("10110100").scale(0.8).move_to(arrow.get_end()+[-1.2,0,0])
+        linhas = VGroup(Line([box.get_right()[0], arrow.get_end()[1] + 0.45, 0], [box.get_left()[0],arrow.get_end()[1] + 0.45,0]),
+                        Line([box.get_right()[0],arrow.get_end()[1] - 0.45,0], [box.get_left()[0],arrow.get_end()[1] - 0.45,0]))
         self.wait()
-        self.play(Create(arrow))
+        self.play(Create(arrow), Create(linhas[0]), Create(linhas[1]))
         self.play(GrowFromPoint(valor, arrow.get_end()))
         self.play(Transform(valor, novoValor))
         self.play(Transform(valor, novoValor2))
@@ -221,7 +291,7 @@ class Intro(Scene):
 
         gaveta = VGroup(corpo, corpo2, bola, tag, bitsTag).move_to([10,0,0]).scale(0.8)
         self.add(gaveta)
-        self.play(box.animate.shift([-9,0,0]), ram.animate.shift([-9,0,0]), valor.animate.shift([-9,0,0]),
+        self.play(box.animate.shift([-9,0,0]), ram.animate.shift([-9,0,0]), valor.animate.shift([-9,0,0]), linhas.animate.shift([-9,0,0]),
                   arrow.animate.shift([-10,0,0]), variavel.animate.move_to([-2,0,0]),
                   gaveta.animate.move_to([5,0,0]))
         
@@ -274,7 +344,7 @@ int main() {
 
         titulo = Text("Declaração de variável", weight=BOLD, t2c={"variável":"#AA77C7"}, font_size = 100).scale(0.6)
         descr = Text("Sintaxe básica", weight=BOLD, font_size = 100).scale(0.3)
-        criaCapitulo(self, titulo, descr, 1, True)
+        criaCapitulo(self, titulo, descr, 1)
 
         self.play(Indicate(exemploCodigo.code_lines[4][4:8], color=BLUE))
         self.wait(0.5)
@@ -628,7 +698,10 @@ int main() {
         ram = Text("RAM").move_to([3,-22,0]).scale(0.8)
         box = Rectangle(height=3.2, width=2.8).move_to([3,-24,0])
         question = Text("quantidade = ?").scale(0.5).move_to(box.get_center())
-        memory = VGroup(ram, box)
+        linhas = VGroup(Line([box.get_right()[0],box.get_center()[1] + 0.45,0], [box.get_left()[0],box.get_center()[1] + 0.45,0]),
+                        Line([box.get_right()[0],box.get_center()[1] - 0.45,0], [box.get_left()[0],box.get_center()[1] - 0.45,0]))
+        memory = VGroup(ram, box, linhas)
+
         self.play(nAtribuicoes.animate.shift([-1,0,0]))
         self.play(GrowFromPoint(memory, nAtribuicoes.code_lines[-3][4:].get_right()))
         self.play(GrowFromCenter(question))
@@ -2076,10 +2149,10 @@ class Main(MovingCameraScene):
     def construct(self):
         Intro.construct(self)
         CriandoAVariavel.construct(self)
-        #RegrasNome.construct(self)
-        #CaseSensitive.construct(self)
-        #Atribucao.construct(self)
-        #segundoConjuntoRegras.construct(self)
+        RegrasNome.construct(self)
+        CaseSensitive.construct(self)
+        Atribucao.construct(self)
+        segundoConjuntoRegras.construct(self)
         #tipoInt.construct(self)
         #tipoFloat.construct(self)
         #tipoChar.construct(self)
