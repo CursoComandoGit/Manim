@@ -91,7 +91,7 @@ def criaCapitulo(cena : Scene, titulo : Text, descricao = Text(""), numero = 1, 
         cena.wait(0.75)
         cena.add(titulo)
         cena.wait(0.1)
-    cena.play(anim, rate_func=rate_functions.ease_in_out_back, run_time=2.5)
+    cena.play(anim, rate_func=rate_functions.ease_in_out_back, run_time=1)
     cena.wait(0.75)
     cena.play(animR)
     cena.remove(grupoCompleto)
@@ -235,6 +235,7 @@ class Intro(Scene):
         self.remove(bitSegment, bitSegment2, bitSegment3, correspondingBits, things, scrolling_group)
         #nova animação com cards
         self.clear()
+        self.wait()
         variavel = Text("variáveis", color=PURPLE)
         self.add(variavel)
         self.wait()
@@ -340,7 +341,7 @@ int main() {
         self.play(Restore(exemploCodigo))
         self.wait(0.5)
         self.play(Circumscribe(exemploCodigo.code_lines[2][11], color=WHITE), Circumscribe(exemploCodigo.code_lines[6], color=WHITE))
-        self.wait(0.5)
+        self.wait(1.25)
 
         titulo = Text("Declaração de variável", weight=BOLD, t2c={"variável":"#AA77C7"}, font_size = 100).scale(0.6)
         descr = Text("Sintaxe básica", weight=BOLD, font_size = 100).scale(0.3)
