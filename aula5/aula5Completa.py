@@ -3,6 +3,75 @@ import random
 from objetoFisico import ObjetoFisico
 import numpy as np
 from customTerminal import CustomTerminal
+
+#Escaneia objeto escolhido. A animação é feita assim que a função é chamada
+def scanAnimation(scene, target_mobject, UDbuff = 0, LRbuff = 0, color=GREEN, scan_time=1.0, glow_opacity=0.15):
+    top_y = target_mobject.get_top()[1] + UDbuff
+    bottom_y = target_mobject.get_bottom()[1] - UDbuff
+    left_x = target_mobject.get_left()[0] - LRbuff
+    right_x = target_mobject.get_right()[0] + LRbuff
+    
+    mainLine = Line(
+        start=np.array([left_x, top_y, 0]), 
+        end=np.array([left_x, bottom_y, 0]), 
+        color=color, 
+        stroke_width=2
+    )
+    
+    glow_group = VGroup()
+    for width_mult, opacity in [(3, 0.4), (6, 0.2), (10, 0.1)]:
+        glow_line = mainLine.copy().set_stroke(color=color, width=mainLine.stroke_width * width_mult, opacity=opacity)
+        glow_group.add(glow_line)
+        
+    scanner_beam = VGroup(glow_group, mainLine)
+    
+    scan_tail = Polygon(
+        [left_x, top_y, 0],
+        [left_x, top_y, 0],
+        [left_x, bottom_y, 0],
+        [left_x, bottom_y, 0],
+        color=color,
+        stroke_width=0,
+        fill_opacity=glow_opacity
+    )
+
+    #Não gosto de definir updaters dentro de funções mas posso arrumar depois
+    def update_tail(tail):
+        current_x = scanner_beam.get_center()[0]
+        
+        if current_x - left_x < 0.01:
+            return
+            
+        tail.become(
+            Polygon(
+                [left_x, top_y, 0],
+                [current_x, top_y, 0],
+                [current_x, bottom_y, 0],
+                [left_x, bottom_y, 0],
+                color=color,
+                stroke_width=0,
+                fill_opacity=glow_opacity
+            )
+        )
+    
+    scan_tail.add_updater(update_tail)
+
+    scene.play(FadeIn(scanner_beam), run_time=0.5)
+    scene.add(scan_tail)
+    scene.play(
+        scanner_beam.animate.shift(RIGHT * (right_x - left_x)),
+        run_time=scan_time,
+        rate_func=linear
+    )
+    
+    scan_tail.remove_updater(update_tail)
+    scene.play(
+        scanner_beam.animate.scale(0),
+        scan_tail.animate.set_fill(opacity=0),
+        run_time=0.5
+    )
+    scene.remove(scanner_beam, scan_tail)
+
 def criar_card(nome, cor, exemplo):
             caixa = RoundedRectangle(
                 width=2.2, height=2.4, corner_radius=0.2, color=cor, fill_color=cor, fill_opacity=0.15, stroke_width=3
@@ -533,7 +602,11 @@ class CaseSensitive(Scene):
 
         self.play(Write(nomes))
         self.wait()
+        titulo = Text("Atribuição de variável", weight=BOLD, t2c={"variável":"#AA77C7"}, font_size = 100).scale(0.6)
+        descr = Text("Regras e propriedades", weight=BOLD, font_size = 100).scale(0.3)
 
+        criaCapitulo(self, titulo, descr, 1)
+        self.wait()
         self.play(FadeOut(*self.mobjects))
         self.clear()
 
@@ -1041,7 +1114,7 @@ int main() {
 
 class segundoConjuntoRegras(Scene):
     def construct(self):
-        titulo = Text("Tipos de variável", t2c = {"Tipos": PURPLE}, font_size = 80).scale(0.8)
+        titulo = Text("Tipos de variável", t2c = {"Tipos": PURPLE}, weight=BOLD, font_size = 80).scale(0.8)
         titulo.move_to(ORIGIN)
 
         rendered_codeCompras = Code(
@@ -2143,20 +2216,95 @@ class cuidado(Scene):
             *[FadeOut(mob) for mob in self.mobjects]
         )
 
+class novoTipoChar(MovingCameraScene):
+    def construct(self):
+        tituloChar = Text(
+            "char",
+            font_size=160,
+            disable_ligatures=True
+        ).scale(0.5)    
+        self.play(Write(tituloChar))
+        self.wait()
+        self.play(tituloChar.animate.shift(UP*2))
+        letterC = Text("C", weight=BOLD, color=PURPLE).scale(1.5)
+        self.play(DrawBorderThenFill(letterC, lag_ratio=0.1), run_time=0.5)
+        self.wait()
+
+        scanAnimation(self, letterC, 0.15, 0.05)
+
+        sixSeven = Text("67").scale(1.5)
+        q = Text("?").scale(3)
+        self.play(Write(q), run_time=0.8)
+        self.play(FadeOut(q))
+        self.wait()
+
+        self.play(Transform(letterC, sixSeven))
+        self.wait()
+        tabela = Text("Código ASCII", t2c={"ASCII":"#AA77C7"}, font_size = 100).scale(0.6).move_to([0,-8,0])
+        self.play(tabela.animate.move_to([0,-2,0]))
+        self.wait()
+
+        self.play(
+            *[FadeOut(mob) for mob in self.mobjects]
+        )
+        
+
+class tabelaASCII(MovingCameraScene):
+    def construct(self):
+        humano = SVGMobject("svgs\\person").move_to([-10,0,0]).scale(0.8).set_z_index(1)
+        computer = SVGMobject("svgs\\monitor").move_to([10,0,0]).scale(0.8).set_z_index(1)
+
+        self.play(humano.animate.move_to([-5,0,0]), computer.animate.move_to([5,0,0]))
+        caixa = criar_card("ASCII", PURPLE_A, "").set_z_index(1)
+
+        self.play(GrowFromCenter(caixa))
+        self.wait(0.5)
+
+        valores = [("A", "65"), ("B", "66"), ("C", "67")]
+
+        for letra, numero in valores:
+            obj_letra = Text(letra, font_size=48).set_z_index(-1).move_to(humano.get_right())
+            
+            self.play(FadeIn(obj_letra, run_time=0.2))
+            self.play(obj_letra.animate.move_to(caixa.get_left()), run_time=0.8)
+            self.play(FadeOut(obj_letra, scale=0.5, run_time=0.2))
+
+            obj_numero = Text(numero, font_size=48, color=YELLOW).set_z_index(-1).move_to(caixa.get_right())
+            
+            self.play(FadeIn(obj_numero, scale=0.5, run_time=0.2))
+            self.play(obj_numero.animate.move_to(computer.get_center()), run_time=0.8)
+
+            self.play(
+                FadeOut(obj_numero, run_time=0.2),
+                computer.animate.scale(1.3), 
+                rate_func=rate_functions.there_and_back,
+                run_time=0.4
+            )
+            
+            self.wait(0.2)
+
+        self.play(
+            *[FadeOut(mob) for mob in self.mobjects]
+        )
+class continuacaoASCII(MovingCameraScene):
+    def construct(self):
+        pass
+
 class Main(MovingCameraScene):
     config.background_color = "#1E1E1E"
     Text.set_default(font = "Manrope")
     
     def construct(self):
-        Intro.construct(self)
-        CriandoAVariavel.construct(self)
-        RegrasNome.construct(self)
-        CaseSensitive.construct(self)
-        Atribucao.construct(self)
-        segundoConjuntoRegras.construct(self)
+        #Intro.construct(self)
+        #CriandoAVariavel.construct(self)
+        #RegrasNome.construct(self)
+        #CaseSensitive.construct(self)
+        #Atribucao.construct(self)
+        #segundoConjuntoRegras.construct(self)
         #tipoInt.construct(self)
-        #tipoFloat.construct(self)
-        #tipoChar.construct(self)
+        tipoFloat.construct(self)
+        novoTipoChar.construct(self)
+        tabelaASCII.construct(self)
         #tipoString.construct(self)
         #globalLocal.construct(self)
         #porExemplo.construct(self)
