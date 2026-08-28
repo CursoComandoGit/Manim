@@ -36,6 +36,8 @@ class Aula5(Scene):
         tipoString.construct(self)
 
 
+
+
 class segundoConjuntoRegras(Scene):
     def construct(self):
         titulo = Text("Tipos de variáveis", t2c = {"Tipos": PURPLE}, font_size = 80).scale(0.8)
@@ -451,78 +453,142 @@ class tipoFloat(Scene):
             "float",
             font_size=160,
             disable_ligatures=True
-        ).scale(0.5)            
-        tituloFloat.move_to(ORIGIN)    
+        ).scale(0.5)
+
+        tituloFloat.move_to(ORIGIN)
 
         retaNumerica = DoubleArrow(
             LEFT * 5,
             RIGHT * 5,
-            buff = 0,
+            buff=0,
             tip_length=0.2,
-            stroke_width=4, 
-            color = PURE_YELLOW
+            stroke_width=4,
+            color=PURE_YELLOW
         )
 
         marcaCentro = Line(
             UP * 0.15,
             DOWN * 0.15,
             stroke_width=3,
-            color = PURE_YELLOW
+            color=PURE_YELLOW
         )
 
         marcaCentro.move_to(retaNumerica.get_center())
 
-        zero = MathTex("0", font_size=24)
+        zero = MathTex(
+            "0",
+            font_size=24
+        )
 
         zero.next_to(
             marcaCentro,
             DOWN,
-            buff = 0.15
+            buff=0.15
         )
 
-        grupoReta = Group(retaNumerica, marcaCentro)
+        grupoReta = Group(
+            retaNumerica,
+            marcaCentro
+        )
 
-        # Valor de 0 a 3.4
-        tracker = ValueTracker(0)
+        # controla a posição e o valor do float
+        tracker = ValueTracker(-3.4)
 
-        menorFloat = always_redraw(
+        menorFloat = MathTex(
+            r"-3,4\times10^{38}",
+            font_size=40,
+            color=BLUE
+        )
+
+        menorFloat.next_to(
+            retaNumerica.get_left(),
+            DOWN,
+            buff=0.2
+        )
+
+        maiorFloat = MathTex(
+            r"3,4\times10^{38}",
+            font_size=40,
+            color=BLUE
+        )
+
+        maiorFloat.next_to(
+            retaNumerica.get_right(),
+            DOWN,
+            buff=0.2
+        )
+
+        # seta na reta
+        def posicaoNaReta():
+            valor = tracker.get_value()
+
+            # Converte [-3.4, 3.4] para [0, 1]
+            proporcao = (valor + 3.4) / 6.8
+
+            # tira erros de ponto flutuante
+            proporcao = np.clip(proporcao, 0, 1)
+
+            return retaNumerica.point_from_proportion(proporcao)
+
+        # Seta que aponta para a reta
+        setaFloat = always_redraw(
+            lambda: Arrow(
+                start=posicaoNaReta() + UP * 0.75,
+                end=posicaoNaReta() + UP * 0.08,
+                buff=0,
+                stroke_width=4,
+                tip_length=0.15,
+                color="#AA77C7"
+            )
+        )
+
+        # valor que acompanha a seta
+        valorFloat = always_redraw(
             lambda: MathTex(
-                rf"-{tracker.get_value():.1f}\times10^{{38}}",
+                rf"{tracker.get_value():.1f}".replace(".", ",")
+                + r"\times10^{38}",
                 font_size=40,
-                color=BLUE
-            ).next_to(retaNumerica.get_left(), DOWN, buff=0.2)
+                color="#AA77C7"
+            ).next_to(
+                setaFloat,
+                UP,
+                buff=0.08
+            )
         )
 
-        maiorFloat = always_redraw(
-            lambda: MathTex(
-                rf"{tracker.get_value():.1f}\times10^{{38}}",
-                font_size=40,
-                color=BLUE
-            ).next_to(retaNumerica.get_right(), DOWN, buff=0.2)
+        posicaoFinalTexto = (
+            retaNumerica.get_center() + UP * 0.8
         )
 
-        posicaoFinalTexto = retaNumerica.get_center() + UP * 0.8
-
-        # aparece o codigo para mostrar um exemplo de float
         rendered_codigoSoma = Code(
-            code_string=codigoSoma, 
+            code_string=codigoSoma,
             language="c",
             formatter_style="material",
             add_line_numbers=False,
-            background="rectangle", 
+            background="rectangle",
             background_config={
                 "fill_opacity": 0,
                 "stroke_width": 0
-                }
+            }
         ).scale(0.8).move_to(ORIGIN)
 
-        sublinhadoFloat = Underline(VGroup(*rendered_codigoSoma.code_lines[4]), stroke_width = 1.6)
+        sublinhadoFloat = Underline(
+            VGroup(
+                *rendered_codigoSoma.code_lines[4][0:11]
+            ),
+            stroke_width=1.6
+        )
+
         sublinhadoFloat.shift(UP * 0.05)
-        
-        destacarPreco = VGroup(*rendered_codigoSoma.code_lines[7])
+
+        destacarPreco = VGroup(
+            *rendered_codigoSoma.code_lines[7]
+        )
 
         self.play(Write(tituloFloat))
-        self.play(tituloFloat.animate.move_to([0,2.5,0]))
+
+        self.play(tituloFloat.animate.move_to([0, 2.5, 0]))
+
         self.wait()
 
         self.play(
@@ -530,24 +596,42 @@ class tipoFloat(Scene):
             run_time=1.2,
             rate_func=smooth
         )
+
+        # os extremos, o zero, a seta e o valor
         self.play(
             FadeIn(menorFloat),
             FadeIn(zero),
             FadeIn(maiorFloat)
         )
-        
+
+        self.play( FadeIn(setaFloat), FadeIn(valorFloat))
+
+        # A seta percorre toda a reta
+        # e o número muda simultaneamente
+
         self.play(
             tracker.animate.set_value(3.4),
-            run_time=3,
+            run_time=5,
             rate_func=linear
         )
 
-        self.play(tituloFloat.animate.move_to(posicaoFinalTexto), run_time = 1.8, rate_func = rate_functions.ease_out_bounce)
+        self.play(FadeOut(setaFloat), FadeOut(valorFloat))
+
         self.play(
-            *[FadeOut(mob) for mob in self.mobjects]
+            tituloFloat.animate.move_to(posicaoFinalTexto),
+            run_time=1.8,
+            rate_func=rate_functions.ease_out_bounce
+        )
+
+        self.play(
+            *[
+                FadeOut(mob)
+                for mob in self.mobjects
+            ]
         )
 
         self.play(FadeIn(rendered_codigoSoma))
+
         self.play(Create(sublinhadoFloat))
 
         self.wait(2)
@@ -555,9 +639,15 @@ class tipoFloat(Scene):
         self.play(Indicate(destacarPreco))
 
         self.wait()
+
         self.play(
-            *[FadeOut(mob) for mob in self.mobjects]
+            *[
+                FadeOut(mob)
+                for mob in self.mobjects
+            ]
         )
+
+
 
 
 class contaCaractereValor2(Scene):
@@ -671,37 +761,8 @@ class contaCaractereValor2(Scene):
         self.play(FadeIn(exclamacao))
         self.wait()
 
-        joker = ImageMobject("images/joker.png").scale(0.25).next_to(soma, DOWN * 1.8 + LEFT * 0.9, buff = 0.3)
-        piada = Text(
-            "Não é um fatorial ok engraçadinho?",
-            font_size=90
-        ).scale(0.25)
-
-        mascara = Rectangle(
-            width=10,
-            height=2,
-            fill_color="#1E1E1E",  
-            fill_opacity=1,
-            stroke_width=0
-        )
-
-        mascara.move_to(joker.get_center() + LEFT * 4.5)
-
-        mascara.set_z_index(8)
-        joker.set_z_index(10)
-        piada.set_z_index(1)
-        
-
-        piada.move_to(joker.get_center() + LEFT)
-        self.play(FadeIn(joker), FadeIn(mascara))
-
-        self.play(
-            piada.animate.shift(RIGHT * 4.5),
-            run_time=2
-        )
-        self.wait(1)
  
-        self.play(FadeOut(exclamacao), FadeOut(piada), FadeOut(joker))
+        self.play(FadeOut(exclamacao))
         self.play(cinq.animate.scale(1 / 1.5).set_color(WHITE))
         self.wait(2)
         self.play(
