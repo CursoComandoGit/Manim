@@ -119,8 +119,8 @@ def update_char(mob, dt):
         mob[1][1].become(novo_rotulo)
 
 def criaCapitulo(cena : Scene, titulo : Text, descricao = Text(""), numero = 1, comFade = False):
-        
-    cena.play(*[obj.animate.set_opacity(0) for obj in cena.mobjects])
+    if cena.mobjects:
+        cena.play(*[obj.animate.set_opacity(0) for obj in cena.mobjects])
     ntext = Text(
         f"Capítulo {numero}",
         color=WHITE,
@@ -192,6 +192,7 @@ def alyBemAly(target_point=ORIGIN, num_arrows=15, min_dist=0.5, max_dist=3.0, ar
     if leave_after:
         return Succession(AnimationGroup(*animations, lag_ratio=lag_ratio), Wait(time_until_leave), arrows.animate.set_opacity(0))
     return Succession(AnimationGroup(*animations, lag_ratio=lag_ratio))
+
 Circumscribe.set_default(color=WHITE)
 def get_highlight(code_obj : Code, line_index : int, color=WHITE, opacity=0.3, fill_screen = True, highlight_text_only = False) -> Rectangle:
     total_lines = len(code_obj.code_lines)
@@ -271,10 +272,9 @@ class Intro(Scene):
         self.play(scrolling_group.animate.shift([-4,0,0]))
 
         self.wait()
-        print = Text("printf(\"blablabla\")").move_to([3,0,0]).scale(0.8)
-        string = Text("\"blablabla\"").move_to([3,0,0]).scale(0.8)
-        char = Text("'C'").move_to([3,-2,0]).scale(0.8)
-        numero = Text("27").scale(0.8).move_to([3,2,0])
+        print = Text("printf(\"blablabla\")").move_to([3,1,0]).scale(0.8)
+        string = Text("\"blablabla\"").move_to([3,1,0]).scale(0.8)
+        numero = Text("27").scale(0.8).move_to([3,-1,0])
 
         #Novas animações do roteiro
         bitSegment = VGroup(block2[-i] for i in range(5, 35))
@@ -284,8 +284,6 @@ class Intro(Scene):
         self.play(Transform(bitSegment, print))
         self.wait(0.5)
         self.play(Transform(bitSegment, string))
-        self.wait(0.5)
-        self.play(Transform(bitSegment2, char))
         self.wait(0.5)
         self.play(Transform(bitSegment3, numero))
         self.wait()
@@ -298,7 +296,7 @@ class Intro(Scene):
         self.wait()
         self.play(bitSegment.animate.set_opacity(0.5),
                   bitSegment2.animate.set_opacity(0.5),
-                  bitSegment3.animate.set_opacity(0.5), Succession(*[Transform(correspondingBits[i], things[i]) for i in range(0,int(len(textoCoisas)/2))]))
+                  bitSegment3.animate.set_opacity(0.5), Succession(*[Transform(correspondingBits[i], things[i]) for i in range(0,int(len(textoCoisas)/2))]), run_time=1)
         self.play(Succession(*[Transform(correspondingBits[i], things[i]) for i in range(int(len(textoCoisas)/2), len(textoCoisas))]), run_time=0.5)
         self.wait(2)
         self.remove(bitSegment, bitSegment2, bitSegment3, correspondingBits, things, scrolling_group)
@@ -307,7 +305,7 @@ class Intro(Scene):
         self.wait()
         variavel = Text("variáveis", color=PURPLE)
         self.add(variavel)
-        self.wait()
+        self.wait(2)
         inteiro = criar_card("int", BLUE_D, "10").move_to([-3,-8,0])
         flutuante = criar_card("float", RED_E, "11.2").move_to([0,-8,0])
         charactere = criar_card("char", GREEN_C, 'c').move_to([3,-8,0])
@@ -340,9 +338,9 @@ class Intro(Scene):
         self.wait()
         self.play(GrowFromCenter(ram), GrowFromCenter(box))
         arrow = CurvedArrow(variavel.get_left(), box.get_right()+[0,0.25,0], color=YELLOW)
-        valor = Text("3").scale(0.8).move_to(arrow.get_end()+[-1,0,0])
+        novoValor2 = Text("3").scale(0.8).move_to(arrow.get_end()+[-1,0,0])
         novoValor = Text("6").scale(0.8).move_to(arrow.get_end()+[-1,0,0])
-        novoValor2 = Text("10110100").scale(0.8).move_to(arrow.get_end()+[-1.2,0,0])
+        valor = Text("10110100").scale(0.8).move_to(arrow.get_end()+[-1.2,0,0])
         linhas = VGroup(Line([box.get_right()[0], arrow.get_end()[1] + 0.45, 0], [box.get_left()[0],arrow.get_end()[1] + 0.45,0]),
                         Line([box.get_right()[0],arrow.get_end()[1] - 0.45,0], [box.get_left()[0],arrow.get_end()[1] - 0.45,0]))
         self.wait()
@@ -440,8 +438,8 @@ int main(){
     char comando_c;
 
     int 4aula;
+    char *Comando%CÊ-;
     int void;
-    char %Comando*CÊ-;
 }
 '''
         exampleCode = Code(code_string=codigoString,
@@ -471,8 +469,8 @@ int main(){
     char comando_c;
 
     int aula4;
+    char *Comando%CÊ-;
     int void;
-    char %Comando*CÊ-;
 }
 '''
         exampleCode2 = Code(code_string=codigoString,
@@ -492,8 +490,26 @@ int main(){
         incorrect2 = get_highlight(exampleCode2, 8, color=RED_A)
         incorrect3 = get_highlight(exampleCode2, 9, color=RED_A)
         self.play(FadeIn(incorrect2))
-        self.play(FadeIn(incorrect3))
         self.wait()
+        codigoString = '''#include <stdio.h>
+
+int main(){
+    int quantidade;
+    int QuAntiDaDe;
+    char comando_c;
+
+    int aula4;
+    char ComandoC;
+    int void;
+}
+'''
+        exampleCode3 = Code(code_string=codigoString,
+            tab_width=4,
+            language="C",
+            formatter_style= "material",
+            add_line_numbers=False,
+            background_config = {"stroke_opacity" : 0,  "fill_opacity":0})
+        
         #Mostrando último incorreto sintaxe
         codigoString = '''#include <stdio.h>
 
@@ -503,11 +519,11 @@ int main(){
     char comando_c;
 
     int aula4;
-    int contador;
     char ComandoC;
+    int contador;
 }
 '''
-        exampleCode3 = Code(code_string=codigoString,
+        exampleCode4 = Code(code_string=codigoString,
             tab_width=4,
             language="C",
             formatter_style= "material", 
@@ -515,9 +531,13 @@ int main(){
             background_config = {"stroke_opacity" : 0,  "fill_opacity":0})
         
         self.play(incorrect2.animate.scale_to_fit_width(0),
-                  incorrect3.animate.scale_to_fit_width(0),
                   Transform(exampleCode, exampleCode3))
         self.remove(incorrect2, incorrect3)
+        self.wait()
+        self.play(FadeIn(incorrect3))
+        self.wait()
+        self.play(incorrect3.animate.scale_to_fit_width(0),
+                  Transform(exampleCode, exampleCode4))
         self.wait()
         programmer = SVGMobject("svgs\\lockedIn").move_to([9,0,0]).flip()
         self.add(programmer)
@@ -562,11 +582,11 @@ int main(){
     char comando_c;
     float localResultFromBaseFunction;
     int aula4;
-    int contador;
     char ComandoC;
+    int contador;
 }
 '''
-        exampleCode4 = Code(code_string=codigoString,
+        exampleCode5 = Code(code_string=codigoString,
             tab_width=4,
             language="C",
             formatter_style= "material", 
@@ -582,9 +602,9 @@ int main(){
         self.play(GrowFromPoint(bestName, programmer.get_top()), run_time=2.5)
         self.remove(variavelObj)
         self.wait()
-        self.play(bestName.animate.move_to(exampleCode.get_center()).scale(0), Transform(exampleCode, exampleCode4))
+        self.play(bestName.animate.move_to(exampleCode.get_center()).scale(0), Transform(exampleCode, exampleCode5))
         self.wait()
-        questionMark = Text("?").scale(1.5).move_to(programmer.get_top()+[0,1,0])
+        questionMark = Text("a7?").scale(1.5).move_to(programmer.get_top()+[0,1,0])
         self.play(GrowFromPoint(questionMark, programmer.get_top()+[0.2,0,0]), run_time=3)
 
         self.play(FadeOut(*self.mobjects))
@@ -605,10 +625,9 @@ class CaseSensitive(Scene):
         titulo = Text("Atribuição de variável", weight=BOLD, t2c={"variável":"#AA77C7"}, font_size = 100).scale(0.6)
         descr = Text("Regras e propriedades", weight=BOLD, font_size = 100).scale(0.3)
 
-        criaCapitulo(self, titulo, descr, 1)
-        self.wait()
         self.play(FadeOut(*self.mobjects))
         self.clear()
+        criaCapitulo(self, titulo, descr, 2)
 
 class Atribucao(MovingCameraScene):
     def construct(self):
@@ -636,8 +655,8 @@ int main() {
                   Circumscribe(exampleCode.code_lines[6][0:1], color=WHITE), run_time=1.2)
         self.wait()
         exampleCode.save_state()
-        self.play(exampleCode.code_lines[3][18:19].animate.scale(1.25).shift([0.5,0,0]))
-        self.play(alyBemAly(exampleCode.code_lines[3][18:19].get_center(), 8, 0.1, 1, 1, run_time=1))
+        self.play(exampleCode.code_lines[4][18:19].animate.scale(1.25).shift([0.5,0,0]))
+        self.play(alyBemAly(exampleCode.code_lines[4][18:19].get_center(), 8, 0.1, 1, 1, run_time=1))
         self.wait()
         self.play(Restore(exampleCode))
         self.wait(2)
@@ -653,6 +672,9 @@ int main() {
         self.wait()
         self.play(Swap(exampleCode.code_lines[4][4:14], exampleCode.code_lines[4][17:18]),
                   exampleCode.code_lines[4][15:17].animate.shift([1,0,0]), exampleCode.code_lines[4][18:19].animate.shift([-1,0,0]))
+        self.play(Swap(exampleCode.code_lines[3], exampleCode.code_lines[4]))
+        self.wait()
+        self.play(Swap(exampleCode.code_lines[4], exampleCode.code_lines[3]))
         self.wait()
         codigoString = '''#include <stdio.h>
 
@@ -786,7 +808,7 @@ int main() {
         self.wait()
         #Printf aparece novamente na aula 5!
         sPrint = '''
-    printf("Quantidade: %d \\n", quantidade);
+    printf("Quantidade: %d \\n");
 }
 '''
         nPrint = Code(code_string=sPrint,
@@ -794,11 +816,11 @@ int main() {
             language="C",
             formatter_style= "material", 
             add_line_numbers=False,
-            background_config = {"stroke_opacity" : 0,  "fill_opacity":0}).move_to([2.125,-30,0])
+            background_config = {"stroke_opacity" : 0,  "fill_opacity":0}).move_to([0,-30,0])
 
         lastBottom = nAtribuicoes.code_lines[-3].get_bottom()
         self.play(nAtribuicoes.code_lines[-1].animate.shift([0,-10,0]))
-        self.play(nPrint.animate.move_to(lastBottom + [2.125, 0,0], aligned_edge=UP), rate_func=rate_functions.ease_in_out_back)
+        self.play(nPrint.animate.move_to(lastBottom + [0.9, 0,0], aligned_edge=UP), rate_func=rate_functions.ease_in_out_back)
         self.wait(2)
 
         self.play(nPrint.code_lines[-1].animate.shift([0,-14,0]), nAtribuicoes.code_lines[0:-2].animate.shift([0,9,0]),
@@ -807,12 +829,40 @@ int main() {
         self.wait()
         self.play(Indicate(nPrint.code_lines[-2][24:26]))
         self.wait()
-        self.play(Circumscribe(nPrint.code_lines[-2][30:31], color=WHITE))
-        self.wait()
-        self.play(Indicate(nPrint.code_lines[-2][32:42]))
-        output = Text("Quantidade: 3").move_to([0,-22,0])
-        self.play(AddTextLetterByLetter(output))
 
+        svirgula = '''
+    printf("Quantidade: %d \\n",);
+
+'''
+        virgula = Code(code_string=svirgula,
+            tab_width=4,
+            language="C",
+            formatter_style= "material", 
+            add_line_numbers=False,
+            background_config = {"stroke_opacity" : 0,  "fill_opacity":0}).move_to([0,-25,0])
+        self.play(Transform(nPrint, virgula))
+        self.wait()
+
+        svirgulaQuantidade = '''
+            printf("Quantidade: %d \\n", quantidade);
+        
+        '''
+        virgulaQuantidade = Code(code_string=svirgulaQuantidade,
+                    tab_width=4,
+                    language="C",
+                    formatter_style= "material", 
+                    add_line_numbers=False,
+                    background_config = {"stroke_opacity" : 0,  "fill_opacity":0}).move_to([0,-25,0])
+        
+        self.play(Transform(nPrint, virgulaQuantidade))
+        #Animação com terminal novo
+        self.wait()
+        terminal = CustomTerminal(height=2.5).move_to([0,-22.8,0])
+        self.play(FadeIn(terminal))
+        self.play(terminal.animate_prompt_and_command(command="./a.out"))
+        self.wait(0.1)
+        terminal.add_line("Quantidade: 3")
+        terminal.add_line("manim@manim:~$ ", color=GREEN)
         self.wait(2)
         self.play(FadeOut(*self.mobjects))
         self.clear()
@@ -2345,15 +2395,15 @@ class Main(MovingCameraScene):
         RegrasNome.construct(self)
         CaseSensitive.construct(self)
         Atribucao.construct(self)
-        segundoConjuntoRegras.construct(self)
-        tipoInt.construct(self)
-        tipoFloat.construct(self)
+        #segundoConjuntoRegras.construct(self)
+        #tipoInt.construct(self)
+        #tipoFloat.construct(self)
         novoTipoChar.construct(self)
         tabelaASCII.construct(self)
-        contaCaractereValor2.construct(self)
-        tipoString.construct(self)
-        globalLocal.construct(self)
-        porExemplo.construct(self)
-        cuidado.construct(self)
-        Formatacao.construct(self)
-        Fim.construct(self)
+        #contaCaractereValor2.construct(self)
+        #tipoString.construct(self)
+        #globalLocal.construct(self)
+        #porExemplo.construct(self)
+        #cuidado.construct(self)
+        #Formatacao.construct(self)
+        #Fim.construct(self)

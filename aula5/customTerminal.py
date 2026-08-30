@@ -1,255 +1,150 @@
 from manim import *
 
 class CustomTerminal(VGroup):
-    
-    def __init__(self, styleLinux : bool = True, sizeX : float = 6, sizeY : float = 4, textSize : float = 12,
-                 title : str = "manim@manim: ~", corBack : str = "#800080FF", corTop : str= "#2D2D2D",
-                 windowsPath :str = "C:\\>", **kwargs):
-        super().__init__(**kwargs) #inicialização de variáveis
-        #Extra for resize
-        self.newWidth = 0
-        self.newHeight = 0
-        #
-        self.sizeX = sizeX
-        self.sizeY = sizeY
-        self.titulo = title
-        self.styleLinux= styleLinux
-        if styleLinux:
-            self.corPath= "#00FF00"
-        else:
-            self.corPath= WHITE
-        self.corBack = corBack
-        self.corTop = corTop
-        self.textSize = textSize #general size
-        if self.styleLinux:
-            self.currentPath = MarkupText(title+"$", color= self.corPath, font_size= 12, font= "Monospace")
-        else:
-            self.currentPath = MarkupText("", color= self.corPath, font_size= 12, font="Monospace")
-        self.lineVector = []
-    
-        self.typeDelay = 0.07
-        self.cursorIsOn = True
-        self.blinkInterval = 0.5
-        self.trackTime= 0
-
-        #Setup objects
-        self.fillRectangle = Rectangle(color = corBack, height = sizeY, width = sizeX,
-                                       stroke_color = corBack, stroke_opacity = 0.25)
-
-        self.fillRectangle.set_fill(corBack, 0.5)
-        self.secondBorder= Rectangle(height = sizeY-0.3, width= sizeX-0.1)
-
-        self.cursor= Rectangle(height = textSize/100, width = textSize/300)
-        self.cursor.set_fill(WHITE,1)
-        self.cursor.move_to(self.secondBorder.get_corner([-1,1,0]),
-                            aligned_edge= self.cursor.get_corner([-1,1,0]))
+    def __init__(self, width=7, height=4.5, title="manim@manim: ~", font_size=16, **kwargs):
+        super().__init__(**kwargs)
+        self.font_size = font_size
         
-
-        self.topRectangle = Rectangle(color = corTop, height = 0.5, width = sizeX)
-        self.topRectangle.set_fill(corTop, 1)
-        self.topRectangle.next_to(self.fillRectangle, UP, buff= 0)
+        # Base do Terminal
+        self.bg = Rectangle(width=width, height=height, color="#2c0822", fill_opacity=0.9, stroke_width=0)
+        self.top_bar = Rectangle(width=width, height=0.4, color="#1E1E1E", fill_opacity=1, stroke_width=0)
+        self.top_bar.next_to(self.bg, UP, buff=0)
         
-        self.closeIcon= SVGMobject("svgs\\closeIcon.svg", opacity = 0.1)
-        self.closeIcon.scale(0.15)
-        self.closeIcon.move_to(self.topRectangle.get_corner([1,1,0]),
-                          aligned_edge = self.closeIcon.get_corner([1,1,0]))
-        self.titleNew = Text(title, font_size = 13)
-        self.titulo = self.titleNew.move_to(self.topRectangle.get_center())
-
-        #Start Initialize
-        self.add(self.fillRectangle,
-                 self.cursor,
-                 self.topRectangle,
-                 self.titulo,
-                 self.closeIcon)
-        if self.styleLinux:
-            self.initialize_path(self.currentPath.text)
-        else:
-            self.initialize_path(windowsPath)
-        self.add_updater(self.cursorBlink)
-
-    #Inicializa texto novo na linha em que o cursor esta por padrão. Path é atualizado
-    def initialize_path(self, path: str, createNewLine : bool = False):
-        if createNewLine:
-            self.cursorNewLine()
-        self.suspend_updating(self.cursorBlink)
-        self.cursorIsOn = True
-        self.currentPath = MarkupText(path, font="Monospace",
-                                     color = self.corPath,
-                                     font_size = self.textSize,
-                                     ).move_to(self.cursor.get_left(),
-                                                                 aligned_edge= LEFT)
-        if self.styleLinux:
-            self.correctColor()
-        self.lineVector.append(self.currentPath)
-        self.cursor.move_to(self.currentPath.get_right(), aligned_edge = LEFT)
-        self.cursor.shift([self.textSize/150,0,0])
-        self.add(self.currentPath)
-        self.resume_updating(self.cursorBlink)
-
-    #Cria um texto na linha que o cursor está
-    def instantInitializeLine(self, text_str: str, color: ParsableManimColor = WHITE):
-        if len(text_str) == 0:
-            return
-        num_leading_spaces = len(text_str) - len(text_str.lstrip(" "))
-        line = MarkupText(text_str, font="Monospace",
-                          font_size=self.textSize, color=color)
-        ref_char = MarkupText("A", font_size=self.textSize, font="Monospace") #para o shift
-        char_width = ref_char.width
-        indent_offset = RIGHT * (num_leading_spaces * char_width)
-        line.move_to(self.cursor.get_left() + indent_offset, aligned_edge=LEFT)
-        self.lineVector.append(line)
-        self.add(line)
-        self.cursor.move_to(line.get_right(), aligned_edge=LEFT)
-        self.cursor.shift([self.textSize/300, 0, 0])
-        self.cursorNewLineCheck()
-    
-    #Cria um texto na linha que o cursor está em forma type
-    def initialize_line(self, scene: Scene, text_str: str, color: ParsableManimColor = WHITE):
-        self.suspend_updating(self.cursorBlink)
-        self.cursor.set_opacity(1) 
+        self.title_text = Text(title, font_size=12, font="Monospace").move_to(self.top_bar)
         
-        if len(text_str) == 0:
+        # Botões da janela (Troquei para evitar SVGs)
+        self.btn_close = Circle(radius=0.08, color="#FF5F56", fill_opacity=1, stroke_width=0)
+        self.btn_close.move_to(self.top_bar.get_right() + LEFT * 0.3)
+        self.btn_min = Circle(radius=0.08, color="#FFBD2E", fill_opacity=1, stroke_width=0)
+        self.btn_min.next_to(self.btn_close, LEFT, buff=0.15)
+        self.btn_max = Circle(radius=0.08, color="#27C93F", fill_opacity=1, stroke_width=0)
+        self.btn_max.next_to(self.btn_min, LEFT, buff=0.15)
+        
+        # Container de Textos e Cursor
+        self.text_container = VGroup()
+        self.cursor = Rectangle(width=0.08, height=0.25, color=WHITE, fill_opacity=1, stroke_width=0)
+        
+        self.add(
+            self.bg, self.top_bar, self.title_text, 
+            self.btn_close, self.btn_min, self.btn_max, 
+            self.text_container, self.cursor
+        )
+
+        self.time_passed = 0
+        self.cursor.add_updater(self._update_cursor_position)
+
+    def _update_cursor_position(self, mob, dt):
+        """Faz o cursor seguir o último caractere desenhado na tela."""
+
+        if self.bg.get_fill_opacity() < 0.8:
             return
 
-        line = MarkupText(text_str, font="Monospace" ,
-                          font_size=self.textSize, color=color)
-        line.move_to(self.cursor.get_left(), aligned_edge=LEFT)
-        line.set_opacity(0) #Start invisible
-        self.lineVector.append(line)
-        self.add(line)
+        # Lógica de piscar o cursor a cada 0.5 segundos
+        self.time_passed += dt
+        if self.time_passed % 1.0 < 0.5: 
+            mob.set_opacity(1)
+        else:
+            mob.set_opacity(0)
+        if len(self.text_container) == 0:
+            mob.set_opacity(0)
+            mob.move_to(self.bg.get_corner(UL) + RIGHT * 0.2 + DOWN * 0.3)
+            return
+            
+        last_element = self.text_container[-1]
 
-        visual_index = 0 #para pula espaços
+        extra_buff = 0.15 if getattr(last_element, "has_trailing_space", False) else 0.05
+
+        chars = [c for c in last_element.get_family() if not c.submobjects]
+        visible_chars = [c for c in chars if c.get_fill_opacity() > 0 or c.get_stroke_opacity() > 0]
         
-        for char in text_str:
-            if char == " ":
-                space_width = self.textSize / 160 
-                self.cursor.shift([space_width, 0, 0])
+        if visible_chars:
+            if len(visible_chars) == len(chars):
+                mob.move_to(last_element.get_right(), aligned_edge=LEFT)
+                mob.shift(RIGHT * extra_buff)
             else:
-                if visual_index < len(line):
-                    char_obj = line[visual_index]
-                    char_obj.set_opacity(1)
-                    self.cursor.move_to(char_obj.get_right(), aligned_edge=LEFT)
-                    self.cursor.shift([self.textSize/300, 0, 0])
-                    visual_index += 1
-            
-            self.cursorNewLineCheck()
-            scene.wait(self.typeDelay)
+                mob.next_to(visible_chars[-1], RIGHT, buff=0.05)
 
-        self.resume_updating(self.cursorBlink)
-
-    #Cria um novo path com uma nova linha de texto em uma nova linha
-    def initialize_lineP(self, path: str, string : str):
-        self.cursorNewLine()
-        self.initialize_path(path)
-        self.initialize_line(string)
-
-    #Updater do cursor
-    def cursorBlink(self, mob, dt):
-        self.trackTime += dt
-        
-        if self.trackTime <= self.blinkInterval:
-            return
-        self.trackTime = 0
-        
-        if self.cursorIsOn:
-            self.cursor.set_opacity(0)
-            self.cursorIsOn = False
+                mob.set_opacity(1)
+                self.time_passed = 0
         else:
-            self.cursor.set_opacity(1)
-            self.cursorIsOn = True
-    #Cria uma nova linha com o path atual
-    def cursorNewLine(self, willGeneratePath : bool= False, newPath : str= "null"):
-        #Alinhamento
-        self.cursor.move_to(self.secondBorder.get_left(),
-                            aligned_edge = LEFT,
-                            coor_mask = [1,0,0])
-        self.cursor.shift([0,-self.textSize/85,0])
-        #
-        if not willGeneratePath:
-            return
-        if newPath == "null":
-            self.initialize_path(self.currentPath.text)
+            target_x = self.text_container[0].get_left()[0] if len(self.text_container) > 0 else (self.bg.get_left()[0] + 0.2)
+            mob.move_to([target_x, last_element.get_y(), 0], aligned_edge=LEFT)
+            
+    def _place_line(self, line):
+        """Calcula a posição vertical correta da nova linha."""
+        if len(self.text_container) == 0:
+            line.move_to(self.bg.get_corner(UL) + RIGHT * 0.2 + DOWN * 0.3, aligned_edge=UL)
         else:
-            self.initialize_path(newPath)
-    
-    def initializeMultiLineString(self, scene: Scene, waitAmount: float,text_str: str, color: ParsableManimColor = WHITE):
-        self.suspend_updating(self.cursorBlink)
-        self.cursor.set_opacity(0)
-        for lines in text_str.split("\n"):
-            self.instantInitializeLine(lines)
-            self.cursorNewLine()
-            scene.wait(waitAmount)
-        self.cursor.set_opacity(1)
-        self.resume_updating(self.cursorBlink)
+            line.next_to(self.text_container[-1], DOWN, buff=0.05, aligned_edge=LEFT)
 
-    #Verifica se cursor passou da borda do terminal
-    def cursorNewLineCheck(self):
-        if self.cursor.get_right()[0] < self.fillRectangle.get_right()[0]:
-            return
-        self.cursorNewLine()
+    def add_line(self, text, color=WHITE):
+        """Adiciona uma linha instantaneamente."""
+        line = Text(text, font="Monospace", font_size=self.font_size, color=color)
+        self._place_line(line)
+        self.text_container.add(line)
+        self._update_cursor_position(self.cursor, 0)
+        return line
 
-    #Atualiza cores do path
-    def correctColor(self):
-        i = 0
-        while self.currentPath.text[i] != ":":
-            i += 1
-        i += 1
-        while self.currentPath.text[i] != "$":
-            self.currentPath[i].set_color(BLUE)
-            i += 1
-        self.currentPath[i].set_color(WHITE)
-
-    #Limpa o terminal inteiro
-    def clear(self):
-        if self.lineVector:
-            self.remove(*self.lineVector)
+    def animate_typing(self, text, color=WHITE, typing_speed=0.08):
+        """Retorna a animação de uma linha sendo digitada do zero."""
+        line = Text(text, font="Monospace", font_size=self.font_size, color=color)
+        self._place_line(line)
+        self.text_container.add(line)
         
-        self.lineVector = []
-        self.cursor.move_to(self.secondBorder.get_corner(UL), aligned_edge=UL)
-        self.cursor.shift([self.textSize/100, -self.textSize/100, 0])
+        return AddTextLetterByLetter(line, run_time=len(text) * typing_speed)
 
-    #daqui pra baixo é logica de ajuste de tamanho do terminal e alinhamento
-    def snap_content_to_top(self):
-        if not self.lineVector:
-            self.cursor.move_to(self.secondBorder.get_corner(UL), aligned_edge=UL)
-            self.cursor.shift([self.textSize/100, -self.textSize/100, 0])
-            return
-
-        all_text_group = VGroup(*self.lineVector)
+    def animate_prompt_and_command(self, prompt="manim@manim:~$ ", command="", prompt_color=GREEN, cmd_color=WHITE, typing_speed=0.08):
+        """
+        Gera uma linha e digita o comando em seguida.
+        Retorna um AnimationGroup para ser executado pela Scene.
+        """
+        full_line = VGroup()
         
-        target_x = self.secondBorder.get_left()[0] + (self.textSize / 100)
-        target_y = self.secondBorder.get_top()[1] - (self.textSize / 100)
+        prompt_text = Text(prompt, font="Monospace", font_size=self.font_size, color=prompt_color)
+        cmd_text = Text(command, font="Monospace", font_size=self.font_size, color=cmd_color)
         
-        all_text_group.move_to([target_x, target_y, 0], aligned_edge=UL)
+        cmd_text.next_to(prompt_text, RIGHT, buff=0.1)
+        full_line.add(prompt_text, cmd_text)
         
-        last_element = self.lineVector[-1]
+        self._place_line(full_line)
+        self.text_container.add(full_line)
         
-        self.cursor.move_to(last_element.get_right(), aligned_edge=LEFT)
-        self.cursor.shift([self.textSize/300, 0, 0])
+        return AnimationGroup(
+            FadeIn(prompt_text, run_time=0.1),
+            AddTextLetterByLetter(cmd_text, run_time=len(command) * typing_speed),
+            lag_ratio=1
+        )
 
-    def resize_terminal(self, new_width=None, new_height=None):
-            old_center = self.fillRectangle.get_center()
+    def resize_terminal(self, new_width=None, new_height=None, align_edge=ORIGIN):
+        """
+        Redimensiona o terminal mantendo a escala dos botões, barra e textos intactos. (Não testado ainda)
+        """
+        anchor_point = self.bg.get_critical_point(align_edge)
+        
+        if new_width:
+            self.bg.stretch_to_fit_width(new_width)
+            self.top_bar.stretch_to_fit_width(new_width)
+        if new_height:
+            self.bg.stretch_to_fit_height(new_height)
+            
+        self.bg.move_to(anchor_point, aligned_edge=align_edge)
+            
+        self.top_bar.next_to(self.bg, UP, buff=0)
+        
+        self.title_text.move_to(self.top_bar)
+        
+        self.btn_close.move_to(self.top_bar.get_right() + LEFT * 0.3)
+        self.btn_min.next_to(self.btn_close, LEFT, buff=0.15)
+        self.btn_max.next_to(self.btn_min, LEFT, buff=0.15)
+        
+        if len(self.text_container) > 0:
+            self.text_container.move_to(
+                self.bg.get_corner(UL) + RIGHT * 0.2 + DOWN * 0.3, 
+                aligned_edge=UL
+            )
+            
+        return self
 
-            if new_width: self.sizeX = new_width
-            if new_height: self.sizeY = new_height
-            
-            self.fillRectangle.stretch_to_fit_width(self.sizeX)
-            if new_height: 
-                self.fillRectangle.stretch_to_fit_height(self.sizeY)
-            
-            self.fillRectangle.move_to(old_center)
-
-            self.secondBorder.stretch_to_fit_width(self.sizeX - 0.1)
-            if new_height:
-                self.secondBorder.stretch_to_fit_height(self.sizeY - 0.3)
-            
-            self.secondBorder.move_to(self.fillRectangle)
-            
-            self.topRectangle.stretch_to_fit_width(self.sizeX)
-            self.topRectangle.next_to(self.fillRectangle, UP, buff=0)
-            
-            self.titulo.move_to(self.topRectangle.get_center())
-            self.closeIcon.move_to(self.topRectangle.get_right() + LEFT * 0.2)
-            
-            self.snap_content_to_top()
+    def clear_terminal(self):
+        """Limpa o conteúdo gerado dentro do terminal."""
+        self.text_container.clear()
