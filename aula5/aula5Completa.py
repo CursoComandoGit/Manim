@@ -157,11 +157,11 @@ def criaCapitulo(cena : Scene, titulo : Text, descricao = Text(""), numero = 1, 
 
     if not comFade:
         cena.add(ntext)
-        cena.wait(0.75)
+        cena.wait(0.6)
         cena.add(titulo)
-        cena.wait(0.1)
+        cena.wait(0.3)
     cena.play(anim, rate_func=rate_functions.ease_in_out_back, run_time=1)
-    cena.wait(0.75)
+    cena.wait(1)
     cena.play(animR)
     cena.remove(grupoCompleto)
     cena.play(*[obj.animate.set_opacity(1) for obj in cena.mobjects])
