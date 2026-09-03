@@ -1008,7 +1008,7 @@ int main(){
 
 class segundoConjuntoRegras(Scene):
     def construct(self):
-        titulo = Text("Tipos de variáveis", t2c = {"Tipos": PURPLE}, font_size = 80).scale(0.8)
+        titulo = Text("Tipos de variáveis", t2c = {"Tipos": PURPLE}, weight=BOLD, font_size = 80).scale(0.8)
         titulo.move_to(ORIGIN)
 
         self.play(Write(titulo))
@@ -1234,7 +1234,7 @@ class soma(Scene):
 
         resultado.move_to(pontoMeio)
 
-        printfSoma = rendered_codigoSoma.code_lines[10]
+        printfSoma = rendered_codigoSoma.code_lines[8][4:]
 
         self.play(
             Transform(seis_destino, resultado),
@@ -1251,7 +1251,7 @@ class soma(Scene):
             rate_func=smooth
         )
 
-        self.play(Circumscribe(printfSoma, buff=0.05, fade_out=True, stroke_width = 1.4), run_time=2)
+        self.play(Circumscribe(printfSoma, fade_out=True, stroke_width = 1.4), run_time=2)
         self.wait(2)
         self.play(
             *[FadeOut(mob) for mob in self.mobjects]
@@ -1542,7 +1542,7 @@ class tipoFloat(Scene):
 
         sublinhadoFloat = Underline(
             VGroup(
-                *rendered_codigoSoma.code_lines[4][0:11]
+                *rendered_codigoSoma.code_lines[4][4:]
             ),
             stroke_width=1.6
         )
@@ -1648,7 +1648,7 @@ int main(){
 int main(){
   int valor1, soma;
   char valor2;
-  
+
   valor1 = 1;
   valor2 = '1';
   soma = valor1 + valor2;
@@ -1719,12 +1719,23 @@ int main(){
             buff=0.1,
             color=YELLOW
         )
+        self.play(rendered_codigoSoma.animate.move_to([0,2.25,0]).scale(0.85), run_time=0.5)
+        somaAly = get_highlight(rendered_codigoSoma, 8)
+        self.play(Write(soma), FadeIn(somaAly))
+        soma.save_state()
         
-
-        self.play(Transform(rendered_codigoSoma.code_lines[8:9], soma), FadeOut(rendered_codigoSoma.code_lines[0:8]), FadeOut(rendered_codigoSoma.code_lines[9:]))
-        self.add(soma)
-        self.remove(*[obj for obj in self.mobjects if obj is not soma])
-
+        questaoA = Text("a) 2", font_size=60).scale(0.6)
+        questaoB = Text("b) 11", font_size=60).scale(0.6)
+        questaoC = Text("c) 50", font_size=60).scale(0.6)
+        grupoQuestoes = VGroup(questaoA, questaoB, questaoC).arrange(DOWN, 0.4, aligned_edge=LEFT).move_to(soma.get_bottom() + [0,-0.5,0], aligned_edge=UP)
+        self.play(FadeIn(grupoQuestoes))
+        self.wait()
+        self.play(grupoQuestoes[0].animate.set_opacity(0.25), grupoQuestoes[1].animate.set_opacity(0.25))
+        self.wait()
+        pensando = SVGMobject("svgs\\pensando").next_to(grupoQuestoes.get_right(), buff=1.2).scale(0.85)
+        self.play(FadeIn(pensando))
+        self.wait()
+        self.play(FadeOut(pensando), FadeOut(grupoQuestoes), Restore(soma), FadeOut(rendered_codigoSoma), FadeOut(somaAly))
         self.wait()
 
         self.play(GrowArrow(seta))
@@ -2093,11 +2104,11 @@ int main()
         ).scale(0.6).move_to(ORIGIN)
 
         
-        trechoAspasSimples1 = rendered_codeChar.code_lines[4][15]
-        trechoAspasSimples2 = rendered_codeChar.code_lines[4][17]
+        trechoAspasSimples1 = rendered_codeChar.code_lines[4][22]
+        trechoAspasSimples2 = rendered_codeChar.code_lines[4][24]
 
-        trechoAspasDuplas1 = rendered_codeChar.code_lines[7][7]
-        trechoAspasDuplas2 = rendered_codeChar.code_lines[7][21]
+        trechoAspasDuplas1 = rendered_codeChar.code_lines[7][11]
+        trechoAspasDuplas2 = rendered_codeChar.code_lines[7][27]
 
         linhasParaSumir = VGroup(
             *[
@@ -2108,7 +2119,7 @@ int main()
         )
 
         linhaPrintf = VGroup(*rendered_codeChar.code_lines[7])
-        cadeia = VGroup(*linhaPrintf[7:22])
+        cadeia = VGroup(*linhaPrintf[11:28])
 
 
         # representando a cadeia de caracteres na memória
