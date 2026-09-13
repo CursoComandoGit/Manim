@@ -124,6 +124,17 @@ class AulaCompleta(MovingCameraScene):
         Capitulo1ponto1.construct(self)
         printf.construct(self)
         Capitulo2.construct(self)
+		
+		Contagem.construct(self)
+    	Main.construct(self)
+        Paradigma.construct(self)
+        Bibliotecas.construct(self)
+        Linha1.construct(self)
+        Unistd.construct(self)
+        Biblioteca.construct(self)
+        Recapitulando.construct(self)
+        Aprender.construct(self)
+        Final.construct(self)
         
 
 
@@ -1014,408 +1025,304 @@ class Capitulo2(MovingCameraScene):
         self.play(Uncreate(linha),FadeOut(titulo))
         self.play(FadeOut(tampa))
 
-class animacaoAntigaWindows(Scene):
+class Contagem(Scene):
     def construct(self):
-        # ----------- Objetos -----------
+        contString = r'''#include <stdio.h>
+#include <unistd.h>
 
-        # NumberPlane() que faz uma grid de quadrados, vai servir só de debug para me guiar
-        numberPlane = NumberPlane()
+int main(){
+    printf("Contagem regressiva 1:\n");
+    printf("3\n");
+    sleep(1);
+    printf("2\n");
+    sleep(1);
+    printf("1\n");
+    sleep(1);
 
-        # Repetição de tarefas
-        #Entrada
-        svgEntrada = SVGMobject("assets/file.svg").move_to([-3.3,0,0])
-        textEntrada = Text("Entrada",color="#58C4DD").next_to(svgEntrada,DOWN).scale(0.6)
+    printf("Contagem regressiva 2:\n");
+    printf("3\n");
+    sleep(1);
+    printf("2\n");
+    sleep(1);
+    printf("1\n");
+    sleep(1);
 
-        groupEntrada = VGroup(svgEntrada,textEntrada)
+    printf("Contagem regressiva 3:\n");
+    printf("3\n");
+    sleep(1);
+    printf("2\n");
+    sleep(1);
+    printf("1\n");
+    sleep(1);
+    return 0;
+}'''
+        contCod = codigoComando(contString).move_to(ORIGIN).scale(0.65)
 
-        # Saida
-        svgSaida = SVGMobject("assets/file.svg").move_to([3.3,0,0])
-        textSaida = Text("Saida",color="#58C4DD").next_to(svgSaida,DOWN).scale(0.6)
+        self.play(FadeIn(contCod[1][0:5]))
+        self.wait(3)
+        self.play(Write(contCod[1][5]))
+        self.wait()
+        self.play(Write(contCod[1][6]))
+        self.wait(2.5)
 
-        groupSaida = VGroup(svgSaida,textSaida)
+        contorno = SurroundingRectangle(contCod[1][6], color=WHITE, buff=0.05, stroke_width=3)
+        self.play(Create(contorno))
+        #self.play(Circumscribe(contCod[1][6], buff=0.05,  color=WHITE), run_time=1.5)
 
-        # Linha de ligação entre os SVGs
-        arrowLinha = Arrow([-2,0,0],[2,0,0],color='#AA77C7',max_tip_length_to_length_ratio=0)
+        # --- Explicação da função sleep ---
+        importada = Text("Função importada", font_size=35, color=WHITE, weight=BOLD).scale(0.6).next_to(contCod[1][6], RIGHT*4)
+        seta = Arrow(start= contorno.get_right(), end=importada.get_left(), color=WHITE)
+        self.play(GrowArrow(seta))
+        self.play(Write(importada))
+        self.wait(1.5)
+        self.play(FadeOut(importada, seta, contorno))
 
-        # Primeira Tarefa
-        dotBolinha1 = Dot(color="#AA77C7").move_to([-1.8,0,0])
-        textBolinha1 = Text("Tarefa 1",color="#AA77C7").next_to(dotBolinha1,DOWN).scale(0.4)
+        sublinhado = Underline(contCod[1][6][5:8], color=WHITE)
+        self.play(Create(sublinhado))
 
-        groupBolinha1 = VGroup(dotBolinha1,textBolinha1)
-        
-        # Segunda Tarefa
-        dotBolinha2 = Dot(color="#AA77C7").move_to([-1.8,0,0])
-        textBolinha2 = Text("Tarefa 2",color="#AA77C7").next_to(dotBolinha2,DOWN).scale(0.4)
+        pausa = Text("Pausa por 1 segundo", font_size=35, color=WHITE, weight=BOLD).scale(0.5).next_to(contCod[1][6], RIGHT)
+        self.play(Write(pausa))
+        self.wait(4)
+        self.play(FadeOut(sublinhado, pausa))
+        # ---
 
-        groupBolinha2= VGroup(dotBolinha2,textBolinha2)
-        
-        # Terceira Tarefa
-        dotBolinha3 = Dot(color="#AA77C7").move_to([-1.8,0,0])
-        textBolinha3 = Text("Tarefa 3",color="#AA77C7").next_to(dotBolinha3,DOWN).scale(0.4)
+        self.play(Write(contCod[1][7]))
+        self.wait()
+        self.play(Write(contCod[1][8]))
+        self.wait(1.5)
+        self.play(Write(contCod[1][9]))
+        self.wait()
+        self.play(Write(contCod[1][10]))
+        self.wait(1.5)
 
-        groupBolinha3 = VGroup(dotBolinha3,textBolinha3)
+        self.play(FadeIn(contCod[1][11:19]), run_time=0.7)
+        self.play(FadeIn(contCod[1][19:27]), run_time=0.7)
 
-
-
-
-
-        # ----------- Animações -----------
-
-        # Animação de fato
-        self.play(FadeIn(groupEntrada),FadeIn(groupSaida))
-        self.play(Create(arrowLinha))
-
-        # Tarefas sendo passadas
-        self.play(Create(groupBolinha1),run_time=0.5)
-
-        self.play(Create(groupBolinha2),run_time=0.2)
-        self.play(groupBolinha1.animate(rate_func=rate_functions.ease_in_out_sine).move_to([1.8,-0.3,0]),run_time=0.7)
-
-        self.play(Create(groupBolinha3),run_time=0.2)
-        self.play(groupBolinha2.animate(rate_func=rate_functions.ease_in_out_sine).move_to([1.8,-0.3,0]),FadeOut(groupBolinha1),run_time=0.7)
-
-        self.play(groupBolinha3.animate(rate_func=rate_functions.ease_in_out_sine).move_to([1.8,-0.3,0]),FadeOut(groupBolinha2),run_time=0.7)
-
-        self.play(FadeOut(groupBolinha3))
-
-        # Limpa tudo
-        self.play(FadeOut(groupEntrada),FadeOut(groupSaida),FadeOut(arrowLinha))
+        self.play(Write(contCod[1][27:30]))
         self.wait()
 
-class alunoPassou(MovingCameraScene):
-    def construct(self):
-        # ----------- Objetos -----------
-        codeMedia = r'''#include <stdio.h>
-double calcularMedia(float n1, float n2) {
-    float soma = 0;
-    
-    soma = n1 + n2;
-    double media = soma / 2;
-    
-    return media;
+        # --- Zoom das partes repetidas do código ---
+        self.play(contCod[1][5:12].animate.scale(1.1), contCod[1][0:5].animate.set_opacity(0.4), contCod[1][12:30].animate.set_opacity(0.4), run_time=0.7)
+        self.play(contCod[1][5:12].animate.scale(0.9), contCod[1][0:5].animate.set_opacity(1), contCod[1][12:30].animate.set_opacity(1), run_time=0.7)
+        self.wait(0.15)
+
+        self.play(contCod[1][13:20].animate.scale(1.1), contCod[1][0:13].animate.set_opacity(0.4), contCod[1][20:30].animate.set_opacity(0.4), run_time=0.7)
+        self.play(contCod[1][13:20].animate.scale(0.9), contCod[1][0:13].animate.set_opacity(1), contCod[1][20:30].animate.set_opacity(1), run_time=0.7)
+        self.wait(0.15)
+
+        self.play(contCod[1][21:27].animate.scale(1.1), contCod[1][0:21].animate.set_opacity(0.4), contCod[1][27:30].animate.set_opacity(0.4), run_time=0.7)
+        self.play(contCod[1][21:27].animate.scale(0.9), contCod[1][0:21].animate.set_opacity(1), contCod[1][27:30].animate.set_opacity(1), run_time=0.7)
+        self.wait(0.15)
+        # ---
+
+        self.wait(2)
+        funcString = r'''#include <stdio.h>
+#include <unistd.h>
+
+void contagemRegressiva(){
+    printf("3\n");
+    sleep(1);
+    printf("2\n");
+    sleep(1);
+    printf("1\n");
+    sleep(1);
+    return;
 }
-int main() {
-    float a, b;
-    const int C = 6;
-    
-    printf("Informe a nota 1: ");
-    scanf("%f", &a);
-    printf("Informe a nota 2:  ");
-    scanf("%f", &b);
-    
-    double media = calcularMedia(a, b);
-    
-    if(media >= C) {
-        printf("\nA media e maior ou igual a %d!", C);
-    }
-    else {
-         printf("\nA media e menor que %d!", C);
-    }
-       
+
+int main(){
+    printf("Contagem regressiva 1:\n");
+    contagemRegressiva();
+    printf("Contagem regressiva 2:\n");
+    contagemRegressiva();
+    printf("Contagem regressiva 3:\n");
+    contagemRegressiva();
     return 0;
 }
 '''
 
-        # Tá no formato novo sugerido, pode ser que mude mais para frente
-        codeRenderMedia = Code(
-            code_string=codeMedia, 
-            language="c",
-            formatter_style="material",
-            add_line_numbers=False,
-            background="rectangle", 
-            background_config={
-                "fill_opacity" : 0,
-                "stroke_opacity": 0,    
-                "color" : "#1E1E1E"
-                }
-        ).scale(0.65)
+        funcCod = codigoComando(funcString).move_to(ORIGIN).scale(0.65)
+        self.play(TransformMatchingShapes(contCod, funcCod))
+        self.wait(2)
+        #self.play(Write(funcCod))
 
-        # Técnicamente uma cena diferente, mas é que uma depende da outra, fica mais fácil trabalhar na mesma classe
-        textDemonstrativo = Text("Parte Demonstrativa",t2c={"Demonstrativa":"#AA77C7"}).move_to([0,2,0]).scale(1.5)
+        self.play(Circumscribe(funcCod[1][2:12], buff=0.05, fade_out=True, color=WHITE, stroke_width=3), run_time=1.5)
 
-        # Técnicamente uma outra cena diferente, mas é que uma depende da outra, fica mais fácil trabalhar na mesma classe
+        sublinhado1 = Underline(funcCod[1][19], color=WHITE, buff=0, stroke_width=3)
+        sublinhado2 = Underline(funcCod[1][15], color=WHITE, buff=0, stroke_width=3)
+        sublinhado3 = Underline(funcCod[1][17], color=WHITE, buff=0, stroke_width=3)
+        self.play(Create(sublinhado1), Create(sublinhado2), Create(sublinhado3))
+        self.play(FadeOut(sublinhado1, sublinhado2, sublinhado3))
+
+        cod = funcCod.copy().to_edge(LEFT, buff=1)
+        self.play(Transform(funcCod, cod))
         
-        textMaisC = Text("+").scale(1.5)
-        svgTeclaCtrlC = ImageMobject("assets/ctrl.png").scale(1.5).next_to(textMaisC,LEFT)
-        svgTeclaC = ImageMobject("assets/c.png").scale(1.5).next_to(textMaisC,RIGHT)
-        
-        groupCtrlc = Group(svgTeclaCtrlC,svgTeclaC,textMaisC).move_to([0,0,0])
-        
-        textMaisV = Text("+").scale(1.5)
-        svgTeclaCtrlV = ImageMobject("assets/ctrl.png").scale(1.5).next_to(textMaisV,LEFT)
-        svgTeclaV = ImageMobject("assets/v.png").scale(1.5).next_to(textMaisV,RIGHT)
-        
-        groupCtrlv = Group(svgTeclaCtrlV,svgTeclaV,textMaisV).move_to([0,-2,0])
+        for i in range(13, 16): 
+            if i == 13:
+                h = get_highlight(funcCod, i)
+                self.play(FadeIn(h), run_time=0.5)
+                self.wait()
+            elif i == 15:
+                s = h
+                h = get_highlight(funcCod, i, PURPLE)
+                self.play(ReplacementTransform(s, h), run_time=0.5)
+                self.wait()
+            else:
+                s = h
+                h = get_highlight(funcCod, i)
+                self.play(ReplacementTransform(s, h), run_time=0.5)
+                self.wait()
 
-        # Literalmente impossível fazer em outra classe, eu vou interagir diretamente com o código
-        blocoCalcularMedia = codeRenderMedia.code_lines[0:9]
-        blocoMain = codeRenderMedia.code_lines[9:30]
+        # função contagem regressiva executando
+        for i in range(3, 12): 
+            if i == 3:
+                a = get_highlight(funcCod, i, PURPLE)
+                self.play(FadeIn(a), run_time=0.5)
+                self.wait()
+            elif i == 11:
+                self.play(FadeOut(a), run_time=0.5)
+                self.wait()
+            else:
+                s = a
+                a = get_highlight(funcCod, i, PURPLE)
+                self.play(ReplacementTransform(s, a), run_time=0.5)
+                self.wait()
 
-        sublinhado1 = Underline(blocoMain[9][12:25])
-        sublinhado2 = Underline(blocoMain[9][26:29])
+        for i in range(16, 18): 
+            if i == 17:
+                s = h
+                h = get_highlight(funcCod, i, PURPLE)
+                self.play(ReplacementTransform(s, h), run_time=0.5)
+                self.wait()
+            # # elif i == 18:
+            # #     self.play(FadeOut(h), run_time=0.5)
+            else:
+                s = h
+                h = get_highlight(funcCod, i)
+                self.play(ReplacementTransform(s, h), run_time=0.5)
+                self.wait()
 
-        # ----------- Animação -----------
-        # Uma Cena
-        self.play(Write(codeRenderMedia))
-        
+        # função contagem regressiva executando
+        for i in range(3, 12): 
+            if i == 3:
+                b = get_highlight(funcCod, i, PURPLE)
+                self.play(FadeIn(b), run_time=0.5)
+                self.wait()
+            elif i == 11:
+                self.play(FadeOut(b), run_time=0.5)
+                self.wait()
+            else:
+                s = b
+                b = get_highlight(funcCod, i, PURPLE)
+                self.play(ReplacementTransform(s, b), run_time=0.5)
+                self.wait()
+
+        for i in range(18, 20): 
+            if i == 19:
+                s = h
+                h = get_highlight(funcCod, i, PURPLE)
+                self.play(ReplacementTransform(s, h), run_time=0.5)
+                self.wait()
+            #     h = get_highlight(funcCod, i)
+            #     self.play(FadeIn(h), run_time=0.5)
+            # # elif i == 20:
+            # #     self.play(FadeOut(h), run_time=0.5)
+            else:
+                s = h
+                h = get_highlight(funcCod, i)
+                self.play(ReplacementTransform(s, h), run_time=0.5)
+                self.wait()
+
+        # função contagem regressiva executando
+        for i in range(3, 12): 
+            if i == 3:
+                c = get_highlight(funcCod, i, PURPLE)
+                self.play(FadeIn(c), run_time=0.5)
+                self.wait()
+            elif i == 11:
+                self.play(FadeOut(c), run_time=0.5)
+                self.wait()
+            else:
+                s = c
+                c = get_highlight(funcCod, i, PURPLE)
+                self.play(ReplacementTransform(s, c), run_time=0.5)
+                self.wait()
+
+        s = h
+        h = get_highlight(funcCod, 20)
+        self.play(ReplacementTransform(s, h), run_time=0.5)
+        self.wait()
+        self.play(FadeOut(h))
         self.wait()
 
-        # Segunda uma cena
-        # As Classes do Manim são, basicamente, agrupamentos de vários mobjects em vetores. Quando você faz set_opacity, ele muda a opacidade para TODOS os submobjects, inclusive o da stroke (contorno) que antes era 0, e agora se tornou o valor novo
-
-        # A solução: O primeiro submobject (índice 0) da classe Code é o submobject do fundo. 
-        # Pulando ele com [1:] (todos os submobjects a partir do índice 1) evita-se a bagunça toda porque nunca tocamos no variável de contorno 
-        self.play(codeRenderMedia[1:].animate.set_opacity(0.5))
-        self.play(Write(textDemonstrativo))
-        self.wait()
-        self.wait()
-        self.wait()
-
-        # Terceira uma cena
-        self.play(FadeIn(groupCtrlc))
-        self.play(FadeIn(groupCtrlv))
-
-        self.wait()
-
-        self.play(FadeOut(groupCtrlc,groupCtrlv,textDemonstrativo),codeRenderMedia[1:].animate.set_opacity(1))
-        self.wait()
-
-        # Mais uma cena
-        self.play(Indicate(blocoMain))
-        self.wait()
-        self.play(Indicate(blocoCalcularMedia))
-
-        # Salvar como está agora
-        self.camera.frame.save_state() # saving camera state so that we can restore it later
-
-        # Zoom no bloco
-        self.play(self.camera.frame.animate.set(width = blocoMain.width*2).move_to(blocoMain))
-        
-        
-        # Circumscribe na Main
-        self.play(Circumscribe(codeRenderMedia.code_lines[9], color=WHITE),run_time=1.2)
-
-        # Circumscribe nas notas
-        self.play(Circumscribe(codeRenderMedia.code_lines[13:17], color=WHITE),run_time=1.2)
-
-        self.wait()
-
-        # Zoom no calcularMedia
-        self.play(self.camera.frame.animate.set(width = codeRenderMedia.code_lines[18].width*2).move_to(codeRenderMedia.code_lines[18]), Wiggle(codeRenderMedia.code_lines[18]))
-        self.wait()
-
-
-
-        # Move códigos para longe
-        self.play(self.camera.frame.animate.set(width = codeRenderMedia.code_lines[18].width*1.3).move_to(codeRenderMedia.code_lines[18]), codeRenderMedia.code_lines[0:17].animate.shift(UP*2), codeRenderMedia.code_lines[19:].animate.shift(DOWN*2))
-        self.wait()
-
-        self.play(Circumscribe(blocoMain[9][11],color=WHITE))
-        self.wait()
-        self.play(Create(sublinhado1))
-        self.play(FadeOut(sublinhado1))
-        self.wait()
-        self.play(Create(sublinhado2))
-        self.play(FadeOut(sublinhado2))
-        self.wait()
-
-        # Move códigos de volta para perto
-        self.play(self.camera.frame.animate.set(width = codeRenderMedia.code_lines[18].width*2).move_to(codeRenderMedia.code_lines[18]), codeRenderMedia.code_lines[0:17].animate.shift(DOWN*2), codeRenderMedia.code_lines[19:].animate.shift(UP*2))
-        self.wait()
-
-        # Câmera se desloca para a função calcular media
-        self.play(self.camera.frame.animate.set(width = blocoCalcularMedia.width*2).move_to(blocoCalcularMedia))
-        self.wait()
-
-        # POsicao da camera
-        cam_center = self.camera.frame.get_center()
-        cam_width = self.camera.frame.width
-
-        # Centraliaz na calcular media
-        self.play(self.camera.frame.animate.set(width = blocoCalcularMedia[1].width*1.3).move_to(blocoCalcularMedia[1]), blocoMain.animate.shift(DOWN*3), blocoCalcularMedia[2:].animate.shift(DOWN*3))
-        self.wait()
-
-        sublinhado3 = Underline(blocoCalcularMedia[1][0:6])
-        self.play(Create(sublinhado3))
-        self.play(FadeOut(sublinhado3))
-        self.wait()
-        sublinhado4 = Underline(blocoCalcularMedia[1][6:19])
-        self.play(Create(sublinhado4))
-        self.play(FadeOut(sublinhado4))
-        self.wait()
-        sublinhado5 = Underline(blocoCalcularMedia[1][20:35])
-        self.play(Create(sublinhado5))
-        self.play(FadeOut(sublinhado5))
-        self.wait()
-
-        # Retorna a focar no bloco todo
-        self.play(self.camera.frame.animate.set(width=cam_width).move_to(cam_center),blocoMain.animate.shift(UP*3),blocoCalcularMedia[2:].animate.shift(UP*3))
-        self.wait()
-
-        # Variável retorna para onde foi chamada
-        self.play(Indicate(blocoCalcularMedia[7]))
-        self.wait()
-
-
-        
-        # Zoom na Main
-        self.play(self.camera.frame.animate.set(width = codeRenderMedia.code_lines[18].width*2).move_to(codeRenderMedia.code_lines[18]))
-        self.wait()
-
-        self.play(Indicate(codeRenderMedia.code_lines[18]))
-        self.wait()
-
-        # Finalmente termina tudo, dá clear, e volta a câmera para a posição original
-        self.play(self.camera.frame.animate.shift(RIGHT*20))
-        self.clear()
-        self.play(Restore(self.camera.frame))
-
-class simMas(Scene):
-    def construct(self):
-        # ----------- Objetos -----------
-        textSim = Text("Sim,",color="#AA77C7")
-        textMas = Text("mas").next_to(textSim,RIGHT).align_to(textSim)
-
-        groupSimas = VGroup(textSim,textMas).move_to(ORIGIN).scale(2)
-
-        # ----------- Animações -----------
-        self.play(Write(textSim))
-        self.wait()
-        self.play(Write(textMas))
-        self.wait()
-
-        self.play(Unwrite(groupSimas))
-        self.wait()
-
-class codigo5vezes(Scene):
-    def construct(self):
-        # ----------- Objetos -----------
-        code5vezes=r'''// printf() e scanf() omitidos para melhorar visualização
-
-    float soma1;
-    
-    soma1 = n1 + n2;
-    double media1 = soma1 / 2;
-
-    float soma2;
-    
-    soma2 = n3 + n4;
-    double media2 = soma2 / 2;
-    
-    float soma3;
-
-    soma3 = n5 + n6;
-    double media3 = soma3 / 2;
-    
-    float soma4;
-    
-    soma4 = n7 + n8;
-    double media4 = soma4 / 2;
-    
-    float soma5;
-
-    soma5 = n9 + n10;
-    double media5 = soma5 / 2;'''
-        
-        codeRender5vezes = Code(code_string=code5vezes, 
-            language="c",
-            formatter_style="material",
-            add_line_numbers=False,
-            background="rectangle", 
-            background_config={
-                "fill_opacity" : 0,
-                "stroke_opacity": 0,    
-                "color" : "#1E1E1E"
-                }
-        ).scale(0.7).move_to([0,-20,0])
-
-        codeLimpo = r'''#include <stdio.h>
-double calcularMedia(float n1, float n2) {
-    float soma = 0;
-    
-    soma = n1 + n2;
-    double media = soma / 2;
-    
-    return media;
-}
-int main() {
-    // printf() e scanf() omitidos para melhorar visualização
-
-    double media1 = calcularMedia(a1,b1);
-
-    double media2 = calcularMedia(a2,b2);
-
-    double media3 = calcularMedia(a3,b3);
-
-    double media4 = calcularMedia(a4,b4);
-
-    double media5 = calcularMedia(a5,b5);
-}'''
-        codeRenderLimpo = Code(code_string=codeLimpo, 
-            language="c",
-            formatter_style="material",
-            add_line_numbers=False,
-            background="rectangle", 
-            background_config={
-                "fill_opacity" : 0,
-                "stroke_opacity": 0,    
-                "color" : "#1E1E1E"
-                }
-        ).scale(0.7)
-
+        self.play(funcCod[1:].animate.set_opacity(0.2))
         textModularizar = Text("Modularizar",color="#AA77C7")
         textSeparar = Text("Separar").next_to(textModularizar,DOWN)
         textOrganizar = Text("Organizar").next_to(textSeparar,DOWN)
 
         group3Palavras = VGroup(textModularizar,textSeparar,textOrganizar).move_to(ORIGIN).scale(2)
-        # ----------- Animações -----------
-        self.play(codeRender5vezes.animate.move_to(ORIGIN),run_time=2)
-        self.wait()
 
-        self.play(ReplacementTransform(codeRender5vezes,codeRenderLimpo))
-        self.wait()
-        self.play(Flash([3,2,0]))
-        self.wait()
-
-        self.play(codeRenderLimpo[1:].animate.set_opacity(0.2))
         self.play(Write(textModularizar))
         self.play(Write(textSeparar))
         self.play(Write(textOrganizar))
+
         self.wait()
 
-        self.play(Unwrite(group3Palavras),Unwrite(codeRenderLimpo))
+        self.play(Unwrite(group3Palavras),FadeOut(funcCod))
         self.wait()
 
 
-#--------PARTE3---------
+        # self.wait(2.5)
+        # self.play(FadeOut(*self.mobjects))
+
+# class Modularizar(Scene):
+#     def construct(self):
+#         textModularizar = Text("Modularizar",color="#AA77C7")
+#         textSeparar = Text("Separar").next_to(textModularizar,DOWN)
+#         textOrganizar = Text("Organizar").next_to(textSeparar,DOWN)
+
+#         group3Palavras = VGroup(textModularizar,textSeparar,textOrganizar).move_to(ORIGIN).scale(2)
+
+#         self.play(Write(textModularizar))
+#         self.play(Write(textSeparar))
+#         self.play(Write(textOrganizar))
+
+#         self.wait()
+
+#         self.play(Unwrite(group3Palavras))
+#         self.wait()
 
 class Main(Scene):
     def construct(self):
-        mainstring1 = '''int main(){
-    // printf() e scanf() omitidos para melhor visualização
-        
-    double media1 = calcularMedia(a1, b1);
-
-    double media2 = calcularMedia(a2, b2);
-
-    double media3 = calcularMedia(a3, b3);
-
-    double media4 = calcularMedia(a4, b4);
-
-    double media5 = calcularMedia(a5, b5);
+        mainstring1 = r'''int main(){
+    printf("Contagem regressiva 1:\n");
+    contagemRegressiva();
+    printf("Contagem regressiva 2:\n");
+    contagemRegressiva();
+    printf("Contagem regressiva 3:\n");
+    contagemRegressiva();
+    return 0;
 }'''
         codmain = codigoComando(mainstring1).move_to(ORIGIN).scale(0.8)
 
-        self.play(Write(codmain[1][0]), FadeIn(codmain[1][1]), run_time=0.5)
-        self.play(FadeIn(codmain[1][3]), run_time=0.8)
-        self.play(FadeIn(codmain[1][5]), run_time=0.8)
-        self.play(FadeIn(codmain[1][7]), run_time=0.8)
-        self.play(FadeIn(codmain[1][9]), run_time=0.8)
-        self.play(FadeIn(codmain[1][11]), run_time=0.8)
-        self.play(Write(codmain[1][12]), run_time=0.5)
+        #self.play(Write(codmain[1][0]), Write(codmain[1][7]), Write(codmain[1][8]), run_time=0.5)
+        self.play(Write(codmain[1][0]), run_time=0.5)
+        self.play(Write(codmain[1][7]), run_time=0.2)
+        self.play(Write(codmain[1][8]), run_time=0.2)
+
+        self.play(Write(codmain[1][1]), Write(codmain[1][3]), Write(codmain[1][5]))
+        self.wait(2)
+        self.play(Write(codmain[1][2]), Write(codmain[1][4]), Write(codmain[1][6]))
+
+        # self.play(FadeIn(codmain[1][1]), run_time=0.8)
+        # self.play(FadeIn(codmain[1][3]), run_time=0.8)
+        # self.play(FadeIn(codmain[1][5]), run_time=0.8)
+        # self.play(FadeIn(codmain[1][2]), run_time=0.8)
+        # self.play(FadeIn(codmain[1][4]), run_time=0.8)
+        # self.play(FadeIn(codmain[1][6]), run_time=0.8)
+                  
+        #self.play(Write(codmain[1][7]), Write(codmain[1][8]), run_time=0.5)
         self.wait(2.5)
         self.play(FadeOut(*self.mobjects))
-
 
 class Paradigma(MovingCameraScene):
     def construct(self):
@@ -1440,37 +1347,54 @@ class Paradigma(MovingCameraScene):
         self.wait(2)
         self.play(FadeOut(*self.mobjects))
 
-class Importar(MovingCameraScene):
+class Bibliotecas(Scene):
     def construct(self):
-        # prtf = Text("printf", font_size=70, weight=BOLD, color=PURPLE).scale(0.7).shift(LEFT*2.5)
-        # func = Text("Função", font_size=70).scale(0.4).next_to(prtf, DOWN, buff=0.2)
-        # stdio = Text("stdio", font_size=70, weight=BOLD, color=PURPLE).scale(0.7).shift(RIGHT*2.5)
-        # biblioteca = Text("Biblioteca\n   padrão", font_size=70).scale(0.4).next_to(stdio, DOWN, buff=0.3)
+        funcString = r'''#include <stdio.h>
+#include <unistd.h>
+        
+void contagemRegressiva(){
+    printf("3\n");
+    sleep(1);
+    printf("2\n");
+    sleep(1);
+    printf("1\n");
+    sleep(1);
+    return;
+}
 
-        # seta = Arrow(start= prtf.get_right(), end=stdio.get_left(), color=WHITE)
+int main(){
+    printf("Contagem regressiva 1:\n");
+    contagemRegressiva();
+    printf("Contagem regressiva 2:\n");
+    contagemRegressiva();
+    printf("Contagem regressiva 3:\n");
+    contagemRegressiva();
+    return 0;
+}
+'''
+        
+        funcCod = codigoComando(funcString).move_to(ORIGIN).scale(0.65)
+        self.play(FadeIn(funcCod))
 
-        # self.play(Write(prtf))
-        # self.play(FadeIn(func))
-        # self.play(GrowArrow(seta))
-        # self.play(Write(stdio))
-        # self.play(FadeIn(biblioteca))
-        # self.wait()
-        # self.play(FadeOut(*self.mobjects))
+        self.play(Circumscribe(funcCod[1][0], buff=0.05, fade_out=True, color=WHITE, stroke_width=3), 
+                  Circumscribe(funcCod[1][4][0:6], buff=0.05, fade_out=True, color=WHITE, stroke_width=3), 
+                  Circumscribe(funcCod[1][6][0:6], buff=0.05, fade_out=True, color=WHITE, stroke_width=3), 
+                  Circumscribe(funcCod[1][8][0:6], buff=0.05, fade_out=True, color=WHITE, stroke_width=3), 
+                  Circumscribe(funcCod[1][14][0:6], buff=0.05, fade_out=True, color=WHITE, stroke_width=3),
+                  Circumscribe(funcCod[1][16][0:6], buff=0.05, fade_out=True, color=WHITE, stroke_width=3),
+                  Circumscribe(funcCod[1][18][0:6], buff=0.05, fade_out=True, color=WHITE, stroke_width=3),
+                  run_time=2)
 
-        prtf = Text("printf", font_size=70, weight=BOLD).scale(0.7).shift(LEFT*2.5)
-        caixa = ImageMobject("assets/caixa.png").scale(0.45).shift(RIGHT*2.5)
-        stdio = Text("stdio.h", font_size=70, weight=BOLD).scale(0.5).next_to(caixa, DOWN, buff=0.1)
-        seta = Arrow(start= prtf.get_right(), end=caixa.get_left(), color=WHITE)
-
-        caixagrupo = Group(caixa, stdio)
-
-        self.play(Write(prtf))
-        self.play(GrowArrow(seta))
-        self.play(FadeIn(caixagrupo))
         self.wait()
+
+        self.play(Circumscribe(funcCod[1][1], buff=0.05, fade_out=True, color=WHITE, stroke_width=3), 
+                  Circumscribe(funcCod[1][5][0:5], buff=0.05, fade_out=True, color=WHITE, stroke_width=3),
+                  Circumscribe(funcCod[1][7][0:5], buff=0.05, fade_out=True, color=WHITE, stroke_width=3),
+                  Circumscribe(funcCod[1][9][0:5], buff=0.05, fade_out=True, color=WHITE, stroke_width=3),
+                  run_time=2)
+
+        self.wait(2.5)
         self.play(FadeOut(*self.mobjects))
-
-
 
 class Linha1(MovingCameraScene):
     def construct(self):
@@ -1498,14 +1422,69 @@ int main(){
         self.play(FadeOut(*self.mobjects))
         self.play(self.camera.frame.animate.set(width=config.frame_width).move_to(ORIGIN))
 
+class Unistd(MovingCameraScene):
+    def construct(self):
+        funcString = r'''#include <stdio.h>
+#include <unistd.h>
+        
+void contagemRegressiva(){
+    printf("3\n");
+    sleep(1);
+    printf("2\n");
+    sleep(1);
+    printf("1\n");
+    sleep(1);
+    return;
+}
+
+int main(){
+    printf("Contagem regressiva 1:\n");
+    contagemRegressiva();
+    printf("Contagem regressiva 2:\n");
+    contagemRegressiva();
+    printf("Contagem regressiva 3:\n");
+    contagemRegressiva();
+    return 0;
+}
+'''
+
+        funcCode = codigoComando(funcString).move_to(ORIGIN).scale(0.65)
+        
+        self.play(FadeIn(funcCode))
+        self.play(self.camera.frame.animate.move_to(funcCode[1][1]).scale(0.6))
+        self.play(funcCode[1][1].animate.set_opacity(0))
+        self.play(self.camera.frame.animate.move_to(funcCode[1][7]))
+        self.wait(2.5)
+        #opção 1
+        rect = SurroundingRectangle(funcCode[1][5], color=WHITE, buff=0.05)
+        rect2 = SurroundingRectangle(funcCode[1][7], color=WHITE, buff=0.05)
+        rect3 = SurroundingRectangle(funcCode[1][9], color=WHITE, buff=0.05)
+        self.play(
+                  ShowPassingFlash(rect, time_width=0.5, run_time=1.5),
+                  ShowPassingFlash(rect2, time_width=0.5, run_time=1.5),
+                  ShowPassingFlash(rect3, time_width=0.5, run_time=1.5),)
+
+        # self.play(
+        #         Circumscribe(funcCode[1][5][0:5], buff=0.05, color=WHITE, stroke_width=3),
+        #         Circumscribe(funcCode[1][7][0:5], buff=0.05, color=WHITE, stroke_width=3),
+        #         Circumscribe(funcCode[1][9][0:5], buff=0.05, color=WHITE, stroke_width=3),
+        #         run_time=2
+        #         )
+        # #opção 2
+        # underline = Underline(helloworldcode[1][3], color=RED, buff=0.05)
+        # self.play(ShowPassingFlash(underline, time_width=0.4, run_time=1.5))
+        self.wait()
+        self.play(FadeOut(*self.mobjects))
+        self.play(self.camera.frame.animate.set(width=config.frame_width).move_to(ORIGIN))
+
 class Biblioteca(MovingCameraScene):
     def construct(self):
-        arq = ImageMobject("assets/arquivo.png")
+        arq = ImageMobject("MANIM_RECURSOS/arquivo.png")
         bib = Text("biblioteca.h", font_size=70).next_to(arq, DOWN, buff=0.2).scale(0.8)
         arqbib = Group(arq, bib).scale(0.4)
 
         func = Text("Funções\n    úteis", font_size=70).next_to(arqbib, RIGHT, buff=1.5).scale(0.5)
-        grupo = ImageMobject("assets/pessoas.png").next_to(func, RIGHT, buff=1.5).scale(0.55)
+        grupo = ImageMobject("MANIM_RECURSOS/pessoas.png").next_to(func, RIGHT, buff=1.5).scale(0.55)
 
         tudo = Group(arqbib, func, grupo).move_to(ORIGIN)
         flecha1 = Arrow(start=arqbib.get_right(), end=func.get_left(), color=PURPLE)
@@ -1576,9 +1555,33 @@ class Biblioteca(MovingCameraScene):
         self.wait()
         self.play(FadeOut(*self.mobjects))
 
+class Recapitulando(Scene):
+    def construct(self):
+        titulo = Text("Recapitulando...", color=PURPLE, font_size=35, weight=BOLD)
+        topico1 = Text("2.  É necessário que exista uma função main", font_size=33)
+        topico2 = Text("3.  Podemos chamar outras funções importadas ou\ndeclaradas no código", font_size=33)
+        topico3 = Text("4.  Dividimos o código em subrotinas para que\nfique menor e mais organizado", font_size=33)
+        topico4 = Text("1.  Um código em C tem uma ou mais funções", font_size=33)
+
+        topicos = VGroup(topico4, topico1, topico2, topico3).arrange(DOWN, buff=0.15, aligned_edge=LEFT)
+        tudo = VGroup(titulo, topicos).arrange(DOWN, buff=0.3, aligned_edge=LEFT).move_to(ORIGIN)
+
+        self.play(Write(titulo))
+        self.wait()
+        self.play(Write(topico4))
+        self.wait()
+        self.play(Write(topico1))
+        self.wait()
+        self.play(Write(topico2), run_time=2.5)
+        self.wait()
+        self.play(Write(topico3), run_time=2.5)
+
+        self.wait()
+        self.play(Unwrite(tudo))
+
 class Aprender(Scene):
     def construct(self):
-        cerebro = ImageMobject("assets/cerebro.png").scale(0.5)
+        cerebro = ImageMobject("MANIM_RECURSOS/cerebro.png").scale(0.5)
         estrutura = Text("Estrutura de Programa em C", font_size=70, t2c={'Programa em C': PURPLE_A, "Estrutura": BLUE_C}).scale(0.7)
 
         self.play(GrowFromCenter(cerebro))
@@ -1591,17 +1594,32 @@ class Aprender(Scene):
 #--------CENAFINAL---------
 class Final(MovingCameraScene):
     def construct(self):
-        # ----------- Objetos -----------
         final_text1 = Text("Próxima aula:",font_size=60)
         final_text2 = Text("Variáveis e tipos de dados",font_size=75, t2c={'Variáveis': PURPLE})
         final = VGroup(final_text1, final_text2).arrange(DOWN, buff=0.3, aligned_edge=LEFT).scale(.7)
 
-
-
-        # ----------- Animações -----------
+        logo = ImageMobject("MANIM_RECURSOS/icon_c.png").scale(0.2)
+        logoOrigin=logo.copy().move_to(UP*8).rotate(PI)
+        # O cursor
+        cursorVinheta=ImageMobject("MANIM_RECURSOS/cursor.png").move_to(DOWN*6+LEFT*2).scale(0.05)
 
         self.play(Write(final))
         self.wait()
+
+        self.play(
+            logoOrigin.animate.become(logo),
+            run_time=2
+        )
+
+        # Cursor aparece e se move
+        self.play(cursorVinheta.animate.move_to(ORIGIN+RIGHT*0.25+DOWN*0.45))
+        self.play(cursorVinheta.animate.scale(0.8),run_time=0.1,rate_func=linear)  # Clica
+        self.play(cursorVinheta.animate.scale(1.2),run_time=0.1,rate_func=linear)  #
+        
+        # Vinheta Puxada
+        self.play(
+            GrowFromCenter(Rectangle(color="#0A0A0A",fill_opacity=1,width=20, height=10),run_time=0.5)
+        )
 
 class Creditos(Scene):
     def construct(self):
