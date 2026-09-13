@@ -135,6 +135,7 @@ class AulaCompleta(MovingCameraScene):
         Recapitulando.construct(self)
         Aprender.construct(self)
         Final.construct(self)
+		Creditos.construct(self)
         
 
 
