@@ -1480,12 +1480,12 @@ int main(){
 
 class Biblioteca(MovingCameraScene):
     def construct(self):
-        arq = ImageMobject("MANIM_RECURSOS/arquivo.png")
+        arq = ImageMobject("assets/arquivo.png")
         bib = Text("biblioteca.h", font_size=70).next_to(arq, DOWN, buff=0.2).scale(0.8)
         arqbib = Group(arq, bib).scale(0.4)
 
         func = Text("Funções\n    úteis", font_size=70).next_to(arqbib, RIGHT, buff=1.5).scale(0.5)
-        grupo = ImageMobject("MANIM_RECURSOS/pessoas.png").next_to(func, RIGHT, buff=1.5).scale(0.55)
+        grupo = ImageMobject("assets/pessoas.png").next_to(func, RIGHT, buff=1.5).scale(0.55)
 
         tudo = Group(arqbib, func, grupo).move_to(ORIGIN)
         flecha1 = Arrow(start=arqbib.get_right(), end=func.get_left(), color=PURPLE)
@@ -1582,7 +1582,7 @@ class Recapitulando(Scene):
 
 class Aprender(Scene):
     def construct(self):
-        cerebro = ImageMobject("MANIM_RECURSOS/cerebro.png").scale(0.5)
+        cerebro = ImageMobject("assets/cerebro.png").scale(0.5)
         estrutura = Text("Estrutura de Programa em C", font_size=70, t2c={'Programa em C': PURPLE_A, "Estrutura": BLUE_C}).scale(0.7)
 
         self.play(GrowFromCenter(cerebro))
@@ -1599,10 +1599,10 @@ class Final(MovingCameraScene):
         final_text2 = Text("Variáveis e tipos de dados",font_size=75, t2c={'Variáveis': PURPLE})
         final = VGroup(final_text1, final_text2).arrange(DOWN, buff=0.3, aligned_edge=LEFT).scale(.7)
 
-        logo = ImageMobject("MANIM_RECURSOS/icon_c.png").scale(0.2)
+        logo = ImageMobject("assets/icon_c.png").scale(0.2)
         logoOrigin=logo.copy().move_to(UP*8).rotate(PI)
         # O cursor
-        cursorVinheta=ImageMobject("MANIM_RECURSOS/cursor.png").move_to(DOWN*6+LEFT*2).scale(0.05)
+        cursorVinheta=ImageMobject("assets/cursor.png").move_to(DOWN*6+LEFT*2).scale(0.05)
 
         self.play(Write(final))
         self.wait()
