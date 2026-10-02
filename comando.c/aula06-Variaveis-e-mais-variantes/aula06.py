@@ -1,9 +1,11 @@
 from manim import *
+import random
+import numpy as np
 import struct
 
-config.background_color="#1E1E1E"
-Text.set_default(font = "Manrope")
+config.background_color = "#1E1E1E"
 MarkupText.set_default(font = "Manrope")
+Text.set_default(font = "Manrope")
 Circumscribe.set_default(color=WHITE)
 Indicate.set_default(color="#AA77C7")
 
@@ -32,9 +34,92 @@ def formatar_potencia(base_str, expoente_str, cor=WHITE, tamanho=0.4):
     exp.next_to(base, UR, buff=0.03).shift(RIGHT * 0.05 + DOWN * 0.1)
     return VGroup(base, exp)
 
+def codigoComando(codeMedia: str, show_background=False):
+    if not isinstance(codeMedia, str):
+        raise TypeError("Passe uma string (o código ) como parâmetro")
+
+    code = Code(
+            code_string=codeMedia, 
+            language="c",
+            formatter_style="material",
+            add_line_numbers=False,
+            background="rectangle", 
+            background_config={
+                "fill_opacity": 0,
+                "stroke_width": 0 if not show_background else 1
+                }
+        )
+    code.scale(1)
+    return code
+
+def sobrescrito(n):
+    mapa = {"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴",
+            "5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"}
+    return "".join(mapa[d] for d in str(n))
+
+def criaCapitulo(cena : Scene, titulo : Text, descricao = Text(""), numero = 1, comFade = False):
+    if cena.mobjects:
+        cena.play(*[obj.animate.set_opacity(0) for obj in cena.mobjects])
+    ntext = Text(
+        f"Capítulo {numero}",
+        color=WHITE,
+        font="Segoe UI",
+        weight=THIN,
+        font_size=80
+    ).scale(0.5)
+
+    grupoCompleto = VGroup(ntext, titulo, descricao)
+
+    grupoCompleto.arrange(DOWN, buff=0.75)
+    grupoCompleto[-1].move_to(grupoCompleto[-2].get_bottom()+[0,-0.25,0], aligned_edge=UP)
+
+    grupoCompleto.center()
+
+    if comFade:
+        anim = LaggedStart(
+            FadeIn(ntext, shift=UP * 0.3),
+            FadeIn(titulo, shift=UP * 0.3),
+            FadeIn(descricao, shift=UP * 0.3),
+            lag_ratio=0.5
+        )
+
+        animR = LaggedStart(
+            FadeOut(descricao, shift=DOWN * 0.3),
+            FadeOut(titulo, shift=DOWN * 0.3),
+            FadeOut(ntext, shift=DOWN * 0.3),
+            lag_ratio=0.25
+        )
+    else:
+        anim = Write(descricao)
+        
+        animR = AnimationGroup(FadeOut(descricao), FadeOut(titulo), FadeOut(ntext))
+
+    if not comFade:
+        cena.add(ntext)
+        cena.wait(0.6)
+        cena.add(titulo)
+        cena.wait(0.3)
+    cena.play(anim, rate_func=rate_functions.ease_in_out_back, run_time=1)
+    cena.wait(1)
+    cena.play(animR)
+    cena.remove(grupoCompleto)
+    cena.play(*[obj.animate.set_opacity(1) for obj in cena.mobjects])
+    
+    cena.wait()
+
 class AulaCompleta(MovingCameraScene):
     def construct(self):
-        # Nova ordem de animações
+        Inicio.construct(self)
+        Intro.construct(self)
+        Ram.construct(self)
+        Variaveis.construct(self)
+        Numero.construct(self)
+        Background.construct(self)
+        Capitulo.construct(self)
+        Computador.construct(self)
+        Tamanho.construct(self)
+        Negativos.construct(self)
+        Float.construct(self)
 
         Char.construct(self)
         Xerox.construct(self)
@@ -42,11 +127,620 @@ class AulaCompleta(MovingCameraScene):
         Modificadores.construct(self)
         Signed.construct(self)
         Unsigned.construct(self)
-        Tamanho.construct(self)
+        Tamanho2.construct(self)
         Longfloat.construct(self)
         Testar.construct(self)
         Final.construct(self)
 
+class Inicio(Scene):
+    def construct(self):
+        helloworldstring = '''#include <stdio.h>
+        
+        int main(){
+            printf("Olá, mundo!");
+            return 0;
+        }'''
+        
+        helloworldcode = codigoComando(helloworldstring, True).scale(0.65)
+
+        computador = SVGMobject("assets/computador.svg")
+
+        grupo = VGroup(helloworldcode, computador).arrange(RIGHT, buff=2.5).move_to(ORIGIN)
+
+        seta = Arrow(start=helloworldcode.get_right(), end=computador.get_left())
+
+
+        self.play(FadeIn(helloworldcode))
+        self.wait()
+        self.play(FadeIn(computador))
+        self.wait()
+        self.play(GrowArrow(seta))
+        self.wait()
+        self.play(FadeOut(seta), FadeOut(computador))
+
+        helloworldcode2 = helloworldcode.copy()
+
+        programador = SVGMobject("assets/programador")
+        
+        entender = VGroup(programador, helloworldcode2).arrange(RIGHT, buff=1.5).move_to(ORIGIN)
+        interrogacao = Text("?", font_size=70).scale(1.5).move_to(helloworldcode2)
+        
+
+        self.play(helloworldcode.animate.move_to(helloworldcode2))
+        self.play(FadeIn(programador))
+        self.play(Write(interrogacao))
+
+
+        self.play(FadeOut(*self.mobjects))
+
+#INTRO aqui
+class Intro(Scene):
+    def construct(self):
+        logo_svg = SVGMobject("assets/comando.svg").scale(1.5).move_to(ORIGIN)
+                
+        self.play(Write(logo_svg))
+
+        self.play(logo_svg.animate.shift(UP*0.6))        
+        comando = MarkupText('<b>comando.c</b>', font="Major Mono Display").next_to(logo_svg, DOWN, buff=0.2).scale(0.6)
+        cursor = Rectangle(
+            color = GREY_A,
+            fill_color = GREY_A,
+            fill_opacity = 1.0,
+            height = 1.1,
+            width = 0.5
+        ).move_to(comando[0]).scale(0.3)
+
+        self.play(TypeWithCursor(comando, cursor))
+        self.play(Blink(cursor, blinks=1))
+        self.remove(cursor)
+        self.wait()
+        self.play(FadeOut(*self.mobjects))
+
+class Ram(MovingCameraScene):
+    def construct(self):
+        ram = Text("Random Access Memory", font_size=70, t2c={'R':PURPLE, 'A':PURPLE, 'M':PURPLE}).move_to(ORIGIN).scale(0.9)
+        
+        memoria = Text("RAM", font_size=70, color=PURPLE).scale(0.9)
+        ret = SurroundingRectangle(memoria, color=WHITE, buff=0.2)
+
+        a = Line(UP*0.1, DOWN*0.1)
+        b = a.copy()
+        c = a.copy()
+        d = a.copy()
+        e = a.copy()
+
+        riscos = VGroup(a, b, c, d, e).arrange(RIGHT, buff=0.3).next_to(ret, UP, buff=0)
+        riscos2 = riscos.copy().next_to(ret, DOWN, buff=0)
+
+        self.play(Write(ram))
+        self.play(TransformMatchingShapes(ram, memoria))
+        rgrupo = VGroup(ret, riscos2, riscos)
+        self.play(Write(rgrupo))
+        self.wait()
+
+        bits = [0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0]
+        caixas = VGroup()
+
+        ponto1 = Dot().scale(0.7)
+        ponto2 = ponto1.copy()
+        ponto3 = ponto1.copy()
+        lpontos = VGroup(ponto1, ponto2, ponto3).arrange(RIGHT, buff=0.2)
+        rpontos = lpontos.copy()
+
+        for bit in bits:
+            numero = Text(str(bit), font_size=48, color=WHITE)
+            quadrado = Square(side_length=1)
+            quadrado.set_stroke(color=WHITE, width=3)
+            quadrado.set_fill(opacity=0)
+
+            numero.move_to(quadrado.get_center())
+            celula = VGroup(quadrado, numero)
+            caixas.add(celula)
+
+        caixas.arrange(RIGHT, buff=0).move_to(ORIGIN).scale(0.9)
+        lpontos.next_to(caixas, LEFT, buff=0.2)
+        rpontos.next_to(caixas, RIGHT, buff=0.2)
+
+        self.play(Unwrite(memoria), FadeOut(rgrupo))
+        self.wait(0.5)
+        self.play(FadeIn(caixas), FadeIn(lpontos), FadeIn(rpontos))
+
+        self.play(self.camera.frame.animate.scale(0.6), FadeOut(rpontos, lpontos))
+
+
+        for x in range(0,3):
+            numero = Text("0", font_size=48, color=WHITE)
+            quadrado = Square(side_length=1)
+            quadrado.set_stroke(color=WHITE, width=3)
+            quadrado.set_fill(opacity=0)
+
+            numero.move_to(quadrado.get_center())
+            celula = VGroup(quadrado, numero).scale(0.9)
+            if len(caixas) > 0:
+                celula.next_to(caixas[-1], RIGHT, buff=0) 
+            caixas.add(celula)
+        self.wait(0.5)
+
+        self.play(self.camera.frame.animate.move_to(caixas[-1]))
+
+        primeiras_seis = caixas[:6]
+        for celula in primeiras_seis:
+            caixas.remove(celula) 
+
+        msign = Text("Menos significativo", font_size=70, color=PURPLE, weight=BOLD).scale(0.2)
+        setamenos = Arrow(start=caixas[-4].get_left(), end=caixas[-2].get_right(), color=PURPLE, stroke_width=3, tip_length=0.2)
+        gruposeta = VGroup(setamenos, msign).arrange(UP, buff=0).next_to(caixas[-3], UP, buff=0.6)
+        msign.shift(LEFT*0.1)
+
+        self.play(Write(gruposeta))
+
+        xis = VGroup()
+        potencias = VGroup()
+        n = len(caixas)
+
+        for i, celula in enumerate(caixas):
+            x = Text("×", font_size=36, color=WHITE).scale(0.6)
+            x.next_to(celula, DOWN, buff=0.15)
+            xis.add(x)
+
+            expoente = n - 1 - i
+            potencia = Text(f"2{sobrescrito(expoente)}", font_size=48, color=WHITE).scale(0.6)
+            potencia.next_to(x, DOWN, buff=0.15)
+            potencias.add(potencia)
+
+        sinais_mais = VGroup()
+
+        for i in range(len(potencias) - 1):
+            mais = Text("+", font_size=48, color=WHITE).scale(0.6)
+            # posiciona no meio do caminho entre uma potência e a próxima
+            ponto_medio = (potencias[i].get_right() + potencias[i+1].get_left()) / 2
+            mais.move_to(ponto_medio)
+            sinais_mais.add(mais)
+
+
+        self.play(FadeIn(xis), FadeIn(potencias), FadeIn(sinais_mais))
+        self.wait()
+
+
+        for i in range(7, 5, -1):
+
+            self.play(caixas[i][1].animate.set_color(PURPLE), run_time=0.5)
+            valor1 = Text("= 0", font_size=48, color=PURPLE).scale(0.5).next_to(potencias[i-8], DOWN, buff=0.1)
+            self.play(Write(valor1), potencias[i-8].animate.set_color(PURPLE), xis[i-8].animate.set_color(PURPLE))
+            self.wait()
+            self.play(FadeOut(valor1))
+
+            self.wait()
+            novo_numero = Text("1", font_size=48, color=PURPLE).scale(0.9)
+            novo_numero.move_to(caixas[i][0].get_center())
+            self.play(ReplacementTransform(caixas[i][1], novo_numero))
+            self.wait()
+
+            self.play(caixas[i][1].animate.set_color(PURPLE), run_time=0.5)
+            if i == 7:
+                valor1 = Text("= 1", font_size=48, color=PURPLE).scale(0.5).next_to(potencias[i-8], DOWN, buff=0.1)
+            else:
+                valor1 = Text("= 2", font_size=48, color=PURPLE).scale(0.5).next_to(potencias[i-8], DOWN, buff=0.1)
+            self.play(Write(valor1))
+            self.wait()
+            self.play(FadeOut(valor1), potencias[i-8].animate.set_color(WHITE), xis[i-8].animate.set_color(WHITE), caixas[i][1].animate.set_color(WHITE))
+        
+        chave = Brace(potencias[-2:], direction=DOWN, color=PURPLE, buff=0.1)
+        texto = Text("= 3", font_size=24, color=PURPLE)
+        texto.next_to(chave, DOWN, buff=0.1)
+
+        numeros_roxos = VGroup(*[celula[1] for celula in caixas[6:8]])
+        self.play(FadeIn(chave), Write(texto), potencias[-2:].animate.set_color(PURPLE), xis[6:8].animate.set_color(PURPLE), numeros_roxos.animate.set_color(PURPLE), sinais_mais[-1].animate.set_color(PURPLE))
+        self.wait()
+
+        self.play(FadeOut(chave), FadeOut(texto), potencias[6:8].animate.set_color(WHITE), xis[6:8].animate.set_color(WHITE), numeros_roxos.animate.set_color(WHITE), sinais_mais[-1].animate.set_color(WHITE))
+
+
+
+        self.play(self.camera.frame.animate.move_to(caixas).set_width(config.frame_width), FadeOut(gruposeta))
+        self.wait()
+
+        bitsbytes = Text("8 bits = 1  byte", font_size=70, color=PURPLE).scale(0.6).next_to(caixas, UP, buff=0.5)
+        self.play(Write(bitsbytes))
+        self.wait()
+        self.play(FadeOut(bitsbytes))
+
+        sign = Text("Mais significativo", font_size=70, color=PURPLE, weight=BOLD).scale(0.2)
+        setamais = Arrow(start=caixas[3].get_right(), end=caixas[1].get_left(), color=PURPLE, stroke_width=3, tip_length=0.2)
+        gruposetam = VGroup(setamais, sign).arrange(UP, buff=0).next_to(caixas[2], UP, buff=0.6)
+        sign.shift(RIGHT*0.1)
+
+        self.play(self.camera.frame.animate.scale(0.6).move_to(caixas[0]))
+        self.play(Write(gruposetam))
+        self.wait()
+        self.play(potencias[0].animate.set_color(PURPLE), run_time=0.5)
+        self.wait()
+        num = Text("128", font_size=48, color=PURPLE).scale(0.6).move_to(potencias[0])
+        self.play(Transform(potencias[0], num))
+        self.wait()
+
+        num = Text(f"2{sobrescrito(7)}", font_size=48, color=WHITE).scale(0.6).move_to(potencias[0])
+        self.play(Transform(potencias[0], num), self.camera.frame.animate.move_to(caixas).set_width(config.frame_width), FadeOut(gruposetam))
+        animacoes = []
+        for celula in caixas:
+            numero_antigo = celula[1]
+            
+            if numero_antigo.text == "0":   
+                quadrado = celula[0]
+                
+                novo_numero = Text("1", font_size=48, color=WHITE).scale(0.9)
+                novo_numero.move_to(quadrado.get_center())
+                
+                animacoes.append(Transform(numero_antigo, novo_numero))
+
+        self.play(*animacoes)
+
+        resultado = Text("= 255", font_size=48, color=PURPLE, weight=BOLD).scale(0.6).next_to(potencias, RIGHT, buff=0.2)
+        self.play(Write(resultado))
+        self.wait()
+
+        self.play(FadeOut(resultado))
+
+
+        animacoes = []
+        for celula in caixas:
+            numero_antigo = celula[1]
+            quadrado = celula[0]
+                            
+            novo_numero = Text("0", font_size=48, color=WHITE).scale(0.9)
+            novo_numero.move_to(quadrado.get_center())
+            animacoes.append(Transform(numero_antigo, novo_numero))
+
+        self.play(*animacoes)
+        
+        estado = [0] * 8
+
+        resultado = Text("= 0", font_size=48, color=WHITE, weight=BOLD).next_to(potencias, DOWN, buff=0.6)
+        self.play(Write(resultado))
+        self.wait(0.5)
+
+        for n in range(1, 7):
+            novo_estado = [int(b) for b in format(n, "08b")]
+            anims = []
+
+            for i, (antigo, novo) in enumerate(zip(estado, novo_estado)):
+                if antigo != novo:  
+                    digito = Text(str(novo), font_size=48, color=WHITE).scale(0.9)
+                    digito.move_to(caixas[i][0].get_center())
+                    anims.append(Transform(caixas[i][1], digito))
+
+            novo_resultado = Text(f"= {n}", font_size=48, color=WHITE, weight=BOLD).next_to(potencias, DOWN, buff=0.6)
+            anims.append(Transform(resultado, novo_resultado))
+
+            self.play(*anims)
+            self.wait(0.5)
+            estado = novo_estado
+
+        ani = []
+        for i, celula in enumerate(caixas):
+            if estado[i] == 0:   
+                digito = Text("1", font_size=48, color=WHITE).scale(0.9)
+                digito.move_to(celula[0].get_center())
+                ani.append(Transform(celula[1], digito))
+
+        novo_resultado = Text("= 255", font_size=48, color=WHITE, weight=BOLD).next_to(potencias, DOWN, buff=0.6)
+        self.play(*ani, Transform(resultado, novo_resultado))
+        self.wait()
+
+        self.play(FadeOut(sinais_mais), FadeOut(potencias), FadeOut(resultado), FadeOut(xis))
+
+        bts = [0, 1, 1, 0, 0, 0, 1, 1]
+        caixas2 = VGroup()
+
+        for bt in bts:
+            num = Text(str(bt), font_size=48, color=WHITE)
+            quad = Square(side_length=1).set_stroke(color=WHITE, width=3).set_fill(opacity=0)
+
+            num.move_to(quad.get_center())
+            cel = VGroup(quad, num)
+            caixas2.add(cel)
+
+        caixas2.arrange(RIGHT, buff=0).scale(0.8)
+
+        decimal = [9, 9]
+        dec = VGroup()
+
+        for decms in decimal:
+            n = Text(str(decms), font_size=48, color=WHITE)
+            q = Square(side_length=1).set_stroke(color=WHITE, width=3).set_fill(opacity=0)
+
+            n.move_to(q.get_center())
+            c = VGroup(q, n)
+            dec.add(c)
+
+        dec.arrange(RIGHT, buff=0).scale(0.8)
+
+        igual = Text("=", font_size=48, color=WHITE)
+        bindec = VGroup(caixas2, igual, dec).arrange(RIGHT, buff=0.5).move_to(self.camera.frame.get_center())
+        self.play(ReplacementTransform(caixas, caixas2))
+        self.play(Write(igual), Write(dec))
+
+        base2 = Text("Base 2", font_size=48, color=PURPLE).scale(0.8).next_to(caixas2, UP, buff=0.7)
+        base10 = Text("Base 10", font_size=48, color=PURPLE).scale(0.8).next_to(dec, UP, buff=0.7)
+        self.play(FadeIn(base2), FadeIn(base10))
+
+
+        self.wait()
+        self.play(FadeOut(*self.mobjects))
+        self.camera.frame.move_to(ORIGIN)
+        self.camera.frame.set_width(config.frame_width)
+
+class Variaveis(Scene):
+    def construct(self):
+        dev = SVGMobject("assets/programador")
+        pc = SVGMobject("assets/computador")
+        ram = SVGMobject("assets/memoria")
+
+        grupo = VGroup(dev, pc, ram).arrange(RIGHT, buff=2).move_to(ORIGIN)
+
+        seta1 = Arrow(start=dev.get_right(), end=pc.get_left())
+        seta2 = Arrow(start=pc.get_right(), end=ram.get_left())
+
+        self.play(FadeIn(dev))
+        self.play(GrowArrow(seta1))
+        self.play(FadeIn(pc))
+        self.play(GrowArrow(seta2))
+        self.play(FadeIn(ram))
+        self.wait()
+        self.play(FadeOut(*self.mobjects))
+
+class Numero(Scene):
+    def construct(self):
+        num = Text("11000000 10100000 00000000 00000000", font_size=70).move_to(ORIGIN).scale(0.7)
+        inteiro = Text("int: -1.063.256.064", font_size=70, t2c={'int:':PURPLE}).scale(0.7)
+        flutuante = Text("float: -5.0", font_size=70, t2c={'float:':PURPLE}).scale(0.7)
+
+        self.play(Write(num))
+
+        copia = num.copy()
+        g = VGroup(inteiro, flutuante).arrange(DOWN, buff=0.3, aligned_edge=LEFT)
+        grupo = VGroup(copia, g).arrange(DOWN, buff=0.6).move_to(ORIGIN)
+
+        self.play(num.animate.move_to(copia))
+        self.wait()
+        self.play(Write(inteiro))
+        self.wait()
+        self.play(Write(flutuante))
+        self.wait()
+
+        interrogacao = Text("?", font_size=70, color=WHITE).next_to(num, UP, buff=0.5)
+        self.play(Write(interrogacao))
+        self.wait()
+
+        self.play(FadeOut(*self.mobjects))
+
+class Background(Scene):
+    def construct(self):
+        num_lines = 50
+        binary_string = "\n".join(
+            "".join(random.choice("01") for _ in range(18))
+            for _ in range(num_lines)
+        )
+
+        block1 = Text(binary_string, font="DejaVu Sans Mono", line_spacing=1).scale(0.6)
+        block2 = block1.copy()
+
+        gap = 0.2
+        block1.move_to(ORIGIN)
+        block2.next_to(block1, DOWN, buff=gap)
+
+        scrolling_group = VGroup(block1, block2)
+        scrolling_group.set_opacity(0)             
+        self.add(scrolling_group)
+
+        scroll_speed = 2.0
+        loop_distance = block1.height + gap
+        start_y = scrolling_group.get_y()
+
+        max_opacity = 1.0                           
+        opacity = ValueTracker(0)
+
+        def background_scroll(mob, dt):
+            mob.shift(UP * scroll_speed * dt)
+            if mob.get_y() - start_y >= loop_distance:
+                mob.shift(DOWN * loop_distance)
+            mob.set_opacity(opacity.get_value() * max_opacity)
+
+        scrolling_group.add_updater(background_scroll)
+
+        self.play(opacity.animate.set_value(1), run_time=2)  
+        self.wait()            
+        self.play(opacity.animate.set_value(0), run_time=2)
+        self.play(FadeOut(*self.mobjects))     
+
+class Capitulo(Scene):
+    def construct(self):
+        titulo = Text("Escovando bits", weight=BOLD, t2c={"bits":"#AA77C7"}, font_size = 100).scale(0.6)
+        descr = Text("Como variáveis são guardadas", weight=BOLD, font_size = 100).scale(0.3)
+        criaCapitulo(self, titulo, descr, 1)    
+        self.play(FadeOut(*self.mobjects))                     
+
+class Computador(Scene):
+    def construct(self):
+        comp = SVGMobject("assets/computador").scale(1.5)
+
+        texto = Text("64 bits", font_size=70, weight=BOLD).scale(0.8)
+
+        grupo = VGroup(comp, texto).arrange(UP, buff=0.2).move_to(ORIGIN)
+
+        self.play(FadeIn(comp), Write(texto))
+
+        self.wait()
+        self.play(FadeOut(grupo))
+
+        linux = SVGMobject("assets/linux").scale(1.2)
+        mac = SVGMobject("assets/mac")
+        so = VGroup(linux, mac).arrange(RIGHT, buff=2.5).move_to(ORIGIN)
+        self.play(FadeIn(so))
+
+        self.wait()
+        
+        self.play(FadeOut(*self.mobjects))
+
+class Tamanho(Scene):
+    def construct(self):
+        bytes = Text("int = 4 bytes", font_size=70).move_to(ORIGIN).scale(0.6)
+        bits = Text("int = 32 bits", font_size=70).move_to(ORIGIN).scale(0.6)
+        inicio = Text("-2³¹", font_size=70, color=PURPLE).scale(0.4)
+        fim = Text("2³¹", font_size=70, color=PURPLE).scale(0.4)
+        #dist = Text("Uma distância bem grande mesmo.", font_size=70).scale(0.4)
+
+        i = Line(UP*0.1, DOWN*0.1, color=PURPLE)
+        j = i.copy()
+
+        linha = Line(LEFT, RIGHT*8, color=PURPLE)
+
+        regua = VGroup(i, linha, j).arrange(RIGHT, buff=0).move_to(ORIGIN)
+        inicio.next_to(i, DOWN, buff=0.2).shift(RIGHT*0.07)
+        fim.next_to(j, DOWN, buff=0.2).shift(RIGHT*0.16)
+        tam = VGroup(regua, inicio, fim)
+
+        self.play(Write(bytes))
+        self.wait()
+        self.play(ReplacementTransform(bytes, bits))
+        self.wait()
+        b = bits.copy()
+        grupo = VGroup(b, tam).arrange(DOWN, buff=0.6)
+        #grupo2 = VGroup(grupo).arrange(DOWN, buff=0.8).move_to(ORIGIN)
+        self.play(bits.animate.move_to(b))
+        self.play(Write(tam))
+        self.wait()
+        #self.play(Write(dist))
+
+        self.wait() 
+        self.play(FadeOut(*self.mobjects))
+
+class Negativos(Scene):
+    def construct(self):
+        pergunta = Text("Como conseguimos representar\n             números negativos?", font_size=70, color=WHITE).scale(0.6)
+        resposta = Text("Complemento de dois", font_size=70, color=PURPLE).scale(0.6).next_to(pergunta, DOWN, buff=0.5)
+        grupo = VGroup(pergunta, resposta).arrange(DOWN, buff=0.3).move_to(ORIGIN)
+
+        self.play(Write(pergunta))
+        self.wait()
+        self.play(FadeIn(resposta))
+        self.wait() 
+
+        self.play(FadeOut(grupo))
+
+        significativo = Text("Bit mais significativo = ", font_size=70, color=WHITE).scale(0.6)
+        zero = Text("0", font_size=70, color=WHITE).scale(0.6)
+        
+        gbit = VGroup(significativo, zero).arrange(RIGHT, buff=0.2)
+        um = Text("1", font_size=70, color=WHITE).scale(0.6)
+        zero.shift(UP*0.05)
+
+        numero = Text("Número é ", font_size=70, color=WHITE).scale(0.6)
+        positivo = Text("positivo", font_size=70, color=PURPLE).scale(0.6)
+        
+        npn = VGroup(numero, positivo).arrange(RIGHT, buff=0.2)
+        positivo.shift(DOWN*0.06)
+        negativo = Text("negativo", font_size=70, color=PURPLE).scale(0.6)
+
+        tudo = VGroup(gbit, npn).arrange(DOWN, buff=0.2).move_to(ORIGIN)
+        negativo.move_to(positivo).shift(RIGHT*0.1)
+        um.move_to(zero)
+        self.play(Write(gbit))
+        self.play(Write(npn))
+        self.wait()
+        self.play(ReplacementTransform(zero, um))
+        self.play(ReplacementTransform(positivo, negativo))
+        self.wait()
+
+        self.play(FadeOut(um), FadeOut(negativo), FadeOut(numero), FadeOut(significativo))
+
+        dez = Text("1010 =", font_size=70, color=WHITE)
+        d = Text("10", font_size=70, color=WHITE).next_to(dez, RIGHT, buff=0.2)
+        z = Text("0", font_size=70, color=WHITE).next_to(dez, LEFT, buff=0.2)
+        md = Text("-10", font_size=70, color=WHITE).next_to(dez, RIGHT, buff=0.2)
+        u= Text("1", font_size=70, color=WHITE).move_to(z)
+
+        self.play(FadeIn(dez), FadeIn(z), FadeIn(d))
+        self.wait()
+        self.play(ReplacementTransform(d, md), ReplacementTransform(z, u))
+        g = VGroup(u, md, dez)
+        x = Cross(g, color=RED, stroke_width=3)
+        self.play(Write(x))
+        self.wait()
+
+        self.play(FadeOut(*self.mobjects))
+
+class Float(Scene):
+    def construct(self):
+        bytes = Text("float = 4 bytes = 32 bits", font_size=70).scale(0.6)
+        sem = Text("Sinal      Expoente     Mantissa", font_size=70, t2c={'Sinal': DARK_BLUE, 'Expoente': PURPLE, 'Mantissa': BLUE}).scale(0.6)
+        bits = Text("1 10010011 01110000010100110100100", font_size=70).scale(0.5)
+
+        g = VGroup(bits, sem).arrange(DOWN, buff=0.5)
+        grupo = VGroup(bytes, g).arrange(DOWN, buff=0.7).move_to(ORIGIN)
+        self.play(Write(bytes))
+        self.play(Write(bits))
+        self.wait()
+        self.play(Write(sem[0:5]), bits[0].animate.set_color(DARK_BLUE))
+        self.wait()
+        self.play(Write(sem[5:13]), bits[1:9].animate.set_color(PURPLE))
+        self.wait()
+        self.play(Write(sem[13:21]), bits[9:32].animate.set_color(BLUE))
+        self.wait()
+        self.play(FadeOut(*self.mobjects))
+        pergunta = Text("Por que expoente\n     e mantissa?", font_size=70).scale(0.9)
+        self.play(Write(pergunta))
+        self.wait()
+        self.play(FadeOut(pergunta))
+
+        num = MarkupText("0,1875", font_size=70)
+        bin = MarkupText("0,0011", font_size=70)
+        igual = MarkupText("=", font_size=70)
+        notacao = MarkupText(
+            "1,1 × 2<sup>−3</sup>",
+            font_size=70,
+        )
+
+        self.play(Write(num))
+        num2 = num.copy()
+
+        g1 = VGroup(num2, igual, bin).arrange(RIGHT, buff=0.2).move_to(ORIGIN)
+        self.play(num.animate.move_to(num2))
+        self.play(Write(igual), Write(bin))
+        self.wait()
+
+        bin2 = bin.copy().move_to(ORIGIN)
+        self.play(FadeOut(num, igual))
+        self.play(bin.animate.move_to(bin2))
+        self.wait()
+
+        g2 = VGroup(bin2, igual, notacao).arrange(RIGHT, buff=0.2).move_to(ORIGIN)
+        self.play(bin.animate.move_to(bin2))
+        self.play(Write(igual), Write(notacao))
+        self.wait()
+
+        notacao2 = notacao.copy().move_to(ORIGIN)
+        self.play(FadeOut(bin, igual))
+        self.play(notacao.animate.move_to(notacao2))
+
+        b = MarkupText("0 01111100* 10000000000000000000000", font_size=70).scale(0.7)
+        note = MarkupText("*Omitido por fins didáticos: para evitar números\n          negativos, somamos 127 ao expoente", font_size=70).scale(0.3).to_edge(DOWN, buff=0.2)
+
+        g3 = VGroup(notacao2, b).arrange(DOWN, buff=0.5).move_to(UP*0.4)
+        self.play(notacao.animate.move_to(notacao2))
+        self.play(FadeIn(b[0]))
+        self.wait()
+        
+        self.play(FadeIn(b[10:33]))
+        self.wait()
+
+        self.play(FadeIn(b[1:10]))
+        self.play(FadeIn(note))
+        self.wait()
+        self.play(FadeOut(*self.mobjects))
+
+
+#PARTE 2
 class Modificadores(Scene):
     def construct(self):
         modificadores = Text("Modificadores de tipo",font_size=100).scale(0.6)
@@ -326,7 +1020,7 @@ class Unsigned(Scene):
 
         self.play(FadeOut(*self.mobjects))
 
-class Tamanho(Scene):
+class Tamanho2(Scene):
     def construct(self):
         def criar_bytes(qtd, cor=WHITE, lado=0.5, buff=0.15):
             quadrados = VGroup(*[
