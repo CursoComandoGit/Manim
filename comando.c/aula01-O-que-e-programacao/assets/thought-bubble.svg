@@ -1,0 +1,11 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Balão principal -->
+  <path d="M100 50 C70 30 40 50 40 80 C20 90 30 120 60 120 C50 140 80 150 90 130 C110 160 140 150 150 120 C180 110 170 80 150 70 C160 50 130 30 100 50 Z" 
+        fill="none" 
+        stroke="white" 
+        stroke-width="4"/>
+  
+  <!-- Círculos de pensamento -->
+  <circle cx="50" cy="150" r="7" fill="none" stroke="white" stroke-width="4"/>
+  <circle cx="35" cy="165" r="4" fill="none" stroke="white" stroke-width="4"/>
+</svg>
