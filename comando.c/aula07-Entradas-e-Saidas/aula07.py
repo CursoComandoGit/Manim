@@ -80,7 +80,7 @@ class PreIntro(MovingCameraScene):
                         ["unity", [-3,-2,0]], ["bash", [4,-2,0]]]
         aplications = VGroup(*[SVGMobject("assets\\"+obj[0]).move_to(obj[1]).scale(0.9) for obj in list_objects]).shift([0,0.15,0])
 
-        self.play(LaggedStart(*[GrowFromPoint(ap, ORIGIN) for ap in aplications],
+        self.play(LaggedStart(*[GrowFromPoint(ap, ORIGIN, rate_func=rate_functions.ease_in_out_back) for ap in aplications],
                   lag_ratio=1),
                   rate_func=rate_functions.ease_in_sine, run_time=2.5)
         titulo = Text("Entradas e Saídas", t2c={"e":WHITE}, weight=BOLD, color=PURPLE).scale(1.5)
@@ -225,7 +225,7 @@ class SiteLogin(MovingCameraScene):
         self.play(*[MoveAlongPath(chip, caminho, rate_func=squish_rate_func(smooth, i*0.2, i*0.2+0.6)) for i, (chip, caminho) in enumerate(zip(cards, caminhos))], run_time=1.6)
         self.remove(cards)
         
-        self.play(Rotating(engrenagem, angle=2*TAU, run_time=1, rate_func=smooth), caixa_programa.animate(run_time=2.4, rate_func=there_and_back).set_stroke(WHITE, width=6))
+        self.play(Rotating(engrenagem, angle=2*TAU, run_time=1, rate_func=smooth), caixa_programa.animate(run_time=1, rate_func=there_and_back).set_stroke(WHITE, width=6))
         #Movimentação da saída para a tela novamente
         check = VMobject(stroke_color=WHITE, stroke_width=7).set_points_as_corners([[-0.2,0,0], [-0.05,-0.15,0], [0.22,0.16,0]])
         selo = VGroup(Circle(radius=0.34, fill_color=verde, fill_opacity=1, stroke_width=0), check).move_to(caixa_programa)
@@ -292,6 +292,27 @@ class SiteLogin(MovingCameraScene):
 
         self.play(FadeOut(*self.mobjects))
         camera.restore()
+class Intro(Scene):
+    def construct(self):
+        logo_svg = SVGMobject("assets/comando.svg").scale(1.5).move_to(ORIGIN)
+                
+        self.play(Write(logo_svg))
+
+        self.play(logo_svg.animate.shift(UP*0.6))        
+        comando = MarkupText('<b>comando.c</b>', font="Major Mono Display").next_to(logo_svg, DOWN, buff=0.2).scale(0.6)
+        cursor = Rectangle(
+            color = GREY_A,
+            fill_color = GREY_A,
+            fill_opacity = 1.0,
+            height = 1.1,
+            width = 0.5
+        ).move_to(comando[0]).scale(0.3)
+
+        self.play(TypeWithCursor(comando, cursor))
+        self.play(Blink(cursor, blinks=1))
+        self.remove(cursor)
+        self.wait()
+        self.play(FadeOut(*self.mobjects))
 
 class ExplicandoIO(MovingCameraScene):
     def construct(self):
@@ -361,15 +382,31 @@ class ExplicandoIO(MovingCameraScene):
             funcao.fase = i
             funcao.add_updater(flutuar)
 
+        #Card no mesmo padrão do criar_card da aula 05, com a largura ajustada ao conteúdo
+        def criar_card(conteudo):
+            caixa = RoundedRectangle(width=conteudo.width + 0.9, height=1.1, corner_radius=0.2, color=roxo, fill_color=roxo, fill_opacity=0.15, stroke_width=3)
+            conteudo.move_to(caixa.get_center())
+            return VGroup(caixa, conteudo)
+
+        #O manim 0.19 conta os espaços como caracteres e o 0.20 não. O índice passado é do texto e é convertido se precisar
+        def letra(mob, conteudo, indice):
+            if len(mob) != len(conteudo):
+                indice = len(conteudo[:indice].replace(" ", ""))
+            return mob[indice]
+
         #Card da biblioteca e seu significado
-        nome_stdio = codigo("stdio.h", 0.6, WHITE)
-        card_stdio = VGroup(SurroundingRectangle(nome_stdio, corner_radius=0.15, buff=0.3, fill_color=roxo, fill_opacity=1, stroke_color=WHITE, stroke_width=2), nome_stdio).move_to(DOWN*1.5)
-        significado = texto("Standard Input-Output", 44, weight=BOLD)
-        #Destaca as letras que formam stdio (o Text não conta os espaços como caracteres)
-        for letra in [0, 1, 4, 8, 14]:
-            significado[letra].set_color(roxo)
-        significado.move_to(RIGHT*2.5 + DOWN*1.2)
-        traducao = texto("Entrada e saída padrão", 30, color="#C9C9D2").next_to(significado, DOWN, buff=0.35)
+        nome_stdio = texto("stdio.h", 44, weight=BOLD, color=roxo, disable_ligatures=True)
+        card_stdio = criar_card(nome_stdio).move_to(DOWN*1.5)
+        definicao = texto("Standard Input-Output", 44, weight=BOLD, disable_ligatures=True)
+        card_definicao = criar_card(definicao).move_to(card_stdio)
+        traducao = texto("Entrada e saída padrão", 30, color="#C9C9D2").next_to(card_definicao, DOWN, buff=0.35)
+
+        #s, t, d, i, o de stdio.h viram o S, t, d, I, O da definição, que ficam destacados
+        pares = [(0, 0), (1, 1), (2, 4), (3, 9), (4, 15)]
+        iniciais = [letra(definicao, "Standard Input-Output", j) for _, j in pares]
+        for inicial in iniciais:
+            inicial.set_color(roxo)
+        resto_definicao = [l for l in definicao if l not in iniciais]
 
         #Animações começam
         self.play(FadeIn(computador, shift=RIGHT*0.4), FadeIn(usuario, shift=LEFT*0.4), run_time=0.6)
@@ -388,13 +425,16 @@ class ExplicandoIO(MovingCameraScene):
         self.remove(*funcoes)
         self.wait(0.5)
 
-        #Significado de stdio
-        self.play(card_stdio.animate.move_to(LEFT*3.75 + DOWN*1.2), run_time=0.5)
-        seta_stdio = Arrow(card_stdio.get_right(), significado.get_left(), buff=0.15, color=WHITE, stroke_width=5)
-        self.play(GrowArrow(seta_stdio), run_time=0.4)
-        self.wait()
-        self.play(Write(significado), run_time=1)
-        self.wait()
+        #Significado de stdio: o card expande, as letras se separam com bounce e o resto da definição cresce junto
+        #O resto cresce a partir do centro do card para acompanhar a expansão e não aparecer fora dele
+        bounce = rate_functions.ease_out_bounce
+        self.play(ReplacementTransform(card_stdio[0], card_definicao[0], rate_func=bounce),
+                  *[ReplacementTransform(nome_stdio[i], inicial, rate_func=bounce) for (i, _), inicial in zip(pares, iniciais)],
+                  *[GrowFromPoint(l, card_stdio.get_center(), rate_func=bounce) for l in resto_definicao],
+                  FadeOut(nome_stdio[5:], scale=0.3, rate_func=squish_rate_func(smooth, 0, 0.3)), run_time=1.2)
+        self.remove(card_stdio)
+        self.add(card_definicao)
+        self.wait(0.5)
         self.play(FadeIn(traducao, shift=DOWN*0.2), run_time=0.6)
         self.wait(2)
 
@@ -403,20 +443,21 @@ class ExplicandoIO(MovingCameraScene):
             ponto.clear_updaters()
         self.play(FadeOut(*self.mobjects))
 
-        criaCapitulo(self, Text("Outputs / Saídas", weight=BOLD, font_size = 100, color=PURPLE).scale(0.6),
-                     Text("Exibindo informações ao usuário", weight=BOLD, font_size = 100).scale(0.3), 1)
+        titulo = Text("Outputs / Saídas", weight=BOLD, t2c={"/":"#AA77C7"}, font_size = 100).scale(0.6)
+        descr = Text("Exibindo informações ao usuário", weight=BOLD, font_size = 100).scale(0.3)
+        criaCapitulo(self, titulo, descr, 1)
 
 class Outputs(MovingCameraScene):
     def construct(self):
         roxo = "#AA77C7"
         camera = self.camera.frame
 
-        def codigo(conteudo, tamanho, cor):
-            return Text(conteudo, font="Monospace", font_size=100, color=cor).scale(tamanho)
-
         #Mesmo card da classe ExplicandoIO, começa abaixo da tela
-        nome_stdio = codigo("stdio.h", 0.6, WHITE)
-        card_stdio = VGroup(SurroundingRectangle(nome_stdio, corner_radius=0.15, buff=0.3, fill_color=roxo, fill_opacity=1, stroke_color=WHITE, stroke_width=2), nome_stdio).move_to(DOWN*5)
+        nome_stdio = Text("stdio.h", font_size=440, weight=BOLD, color=roxo, disable_ligatures=True).scale(0.1)
+        caixa_stdio = RoundedRectangle(width=nome_stdio.width + 0.9, height=1.1, corner_radius=0.2, color=roxo, fill_color=roxo, fill_opacity=0.15, stroke_width=3)
+        #O fundo do card é transparente, então uma cópia com a cor do fundo da cena esconde o printf atrás dele
+        fundo_stdio = caixa_stdio.copy().set_fill(config.background_color, 1).set_stroke(width=0)
+        card_stdio = VGroup(fundo_stdio, caixa_stdio, nome_stdio.move_to(caixa_stdio)).move_to(DOWN*5)
 
         printf = criar_codigo("printf();").scale(1.25).move_to(DOWN*2)
 
@@ -464,7 +505,7 @@ class Outputs(MovingCameraScene):
         #Zoom no printf, o card fica fora do enquadramento
         self.play(camera.animate.move_to(printf).set(width=8), run_time=1)
         self.remove(card_stdio)
-        self.wait()
+        self.wait(1)
 
         #Parênteses abrem espaço e o texto cai no lugar
         self.play(ReplacementTransform(printf.background, printf_texto.background),
@@ -472,10 +513,9 @@ class Outputs(MovingCameraScene):
                   ReplacementTransform(printf.code_lines[0][7:], linha[-2:]), run_time=0.7)
         self.play(parametro.animate.move_to(lugar_parametro), rate_func=rate_functions.ease_out_cubic, run_time=1.1)
         self.add(printf_texto)
-        self.wait(2)
 
         #Segunda aspas e segundo parênteses abrem espaço enquanto a câmera afasta, o texto novo cai igual ao anterior
-        self.wait(2)
+        self.wait(1.5)
         self.play(ReplacementTransform(printf_texto.background, printf_formatado.background),
                   ReplacementTransform(trecho(printf_texto, texto_ola, 0, 19), trecho(printf_formatado, texto_formatado, 0, 19)),
                   ReplacementTransform(trecho(printf_texto, texto_ola, 19, 20), trecho(printf_formatado, texto_formatado, 22, 23)),
@@ -484,12 +524,239 @@ class Outputs(MovingCameraScene):
         self.play(novos_parametros.animate.shift(DOWN*5), rate_func=rate_functions.ease_out_cubic, run_time=1.1)
         self.remove(printf_texto)
         self.add(printf_formatado)
+        self.wait(1.5)
+
+        #Especificadores que saem do %s. %d e %i ficam no meio da linha de cima para o card ficar em cima deles
+        simbolo_s = trecho(printf_formatado, texto_formatado, 20, 22)
+        nomes_especificadores = ["%c", "%d", "%i", "%f", "%s", "%lf", "%u", "%x"]
+        especificadores = VGroup(*[Text(nome, font="Monospace", font_size=100, color=simbolo_s[0].get_color()).scale(0.3) for nome in nomes_especificadores])
+        especificadores.arrange_in_grid(rows=2, cols=4, buff=(0.8, 0.5)).move_to(UP*6)
+        inteiros = VGroup(especificadores[1], especificadores[2])
+        outros = VGroup(especificadores[0], *especificadores[3:])
+
+        #Card igual ao criar_card da aula 05
+        def criar_card(nome, cor, exemplo):
+            caixa = RoundedRectangle(width=2.2, height=2.4, corner_radius=0.2, color=cor, fill_color=cor, fill_opacity=0.15, stroke_width=3)
+            rotulo_nome = Text(nome, font_size=30, color=cor, weight=BOLD, disable_ligatures=True)
+            rotulo_exemplo = Text(exemplo, font_size=26)
+            conteudo = VGroup(rotulo_nome, rotulo_exemplo).arrange(DOWN, buff=0.5)
+            conteudo.move_to(caixa.get_center())
+            return VGroup(caixa, conteudo)
+
+        card_int = criar_card("int", BLUE_D, "10").scale(0.6).next_to(inteiros, UP, buff=0.4)
+
+        #Frase do Jorge e a versão com os especificadores em branco (os '-' ficam invisíveis e um quadrado branco entra no lugar)
+        texto_jorge = 'printf("Meu nome é Jorge e eu nasci em 1990");'
+        texto_variaveis = 'printf("Meu nome é %- e eu nasci em %-", nome, anoNascimento);'
+        printf_jorge = criar_codigo(texto_jorge).move_to(ORIGIN)
+        printf_variaveis = criar_codigo(texto_variaveis).move_to(ORIGIN)
+        porcentos = []
+        quadrados = VGroup()
+        #Os dois % estão nos caracteres 19 e 36 do texto, cada um seguido de um '-'
+        for i in (19, 36):
+            porcento = trecho(printf_variaveis, texto_variaveis, i, i + 1)
+            traco = trecho(printf_variaveis, texto_variaveis, i + 1, i + 2).set_opacity(0)
+            porcentos.append(porcento)
+            quadrados.add(Square(side_length=porcento.height, color="#87916c", fill_color="#87916c", fill_opacity=1, stroke_width=0).move_to([traco.get_x(), porcento.get_y(), 0]))
+
+        #Os especificadores se espalham para cima e a câmera vai até eles, deixando o printf de fora
+        self.play(*[TransformFromCopy(simbolo_s, especificador, rate_func=squish_rate_func(smooth, i*0.05, i*0.05 + 0.65)) for i, especificador in enumerate(especificadores)],
+                  camera.animate.move_to(UP*6.5).set(width=7.5), run_time=1.6)
+        self.remove(printf_formatado)
+        self.wait(1)
+
+        #Destaque do %d e %i com o card de int
+        self.play(outros.animate.set_opacity(0.25), *[inteiro.animate.scale(1.3).set_color(BLUE_D) for inteiro in inteiros], run_time=0.6)
+        self.wait(0.5)
+        self.play(GrowFromCenter(card_int), run_time=0.6)
+        self.wait(1.2)
+
+        #Câmera volta ao enquadramento normal e o printf do Jorge aparece
+        self.play(FadeOut(especificadores, card_int), camera.animate.move_to(ORIGIN).set(width=config.frame_width), run_time=1)
+        self.play(FadeIn(printf_jorge, shift=UP*0.3), run_time=0.8)
+        self.wait(1.5)
+
+        #Jorge e 1990 são destacados e viram os especificadores em branco
+        self.play(LaggedStart(Indicate(trecho(printf_jorge, texto_jorge, 19, 24)),
+                  Indicate(trecho(printf_jorge, texto_jorge, 39, 43)), lag_ratio=0.5), run_time=1)
+        self.wait(0.5)
+        self.play(ReplacementTransform(trecho(printf_jorge, texto_jorge, 0, 19), trecho(printf_variaveis, texto_variaveis, 0, 19)),
+                  ReplacementTransform(trecho(printf_jorge, texto_jorge, 19, 24), VGroup(porcentos[0], quadrados[0])),
+                  ReplacementTransform(trecho(printf_jorge, texto_jorge, 24, 39), trecho(printf_variaveis, texto_variaveis, 21, 36)),
+                  ReplacementTransform(trecho(printf_jorge, texto_jorge, 39, 43), VGroup(porcentos[1], quadrados[1])),
+                  ReplacementTransform(trecho(printf_jorge, texto_jorge, 43, 44), trecho(printf_variaveis, texto_variaveis, 38, 39)),
+                  ReplacementTransform(trecho(printf_jorge, texto_jorge, 44), trecho(printf_variaveis, texto_variaveis, -2)),
+                  FadeIn(trecho(printf_variaveis, texto_variaveis, 39, -2), shift=LEFT*0.3, rate_func=squish_rate_func(smooth, 0.4, 1)), run_time=1.2)
+        self.remove(printf_jorge)
+        self.add(printf_variaveis, quadrados)
+        self.wait(1.5)
+
+        #Versão final com os especificadores. Tem o mesmo tamanho da anterior, então o 's' e o 'd' ficam onde estavam os '-'
+        texto_final = 'printf("Meu nome é %s e eu nasci em %d", nome, anoNascimento);'
+        printf_final = criar_codigo(texto_final).move_to(ORIGIN)
+        letras_especificadores = [trecho(printf_final, texto_final, i, i + 1) for i in (20, 37)]
+        for letra_especificador in letras_especificadores:
+            letra_especificador.shift(UP*5)
+
+        #Nome seria uma string... o 's' cai no lugar do primeiro quadrado, que some logo em seguida
+        self.play(Indicate(trecho(printf_variaveis, texto_variaveis, 41, 45)), run_time=1)
+        self.wait(1.5)
+        self.play(letras_especificadores[0].animate.shift(DOWN*5), rate_func=rate_functions.ease_out_cubic, run_time=1.1)
+        self.play(FadeOut(quadrados[0], scale=0.5), run_time=0.4)
+        self.wait(1)
+
+        #...números inteiros utilizamos %d ou %i: a mesma coisa com o 'd'
+        self.play(Indicate(trecho(printf_variaveis, texto_variaveis, 47, -2)), run_time=1)
+        self.wait(1)
+        self.play(letras_especificadores[1].animate.shift(DOWN*5), rate_func=rate_functions.ease_out_cubic, run_time=1.1)
+        self.play(FadeOut(quadrados[1], scale=0.5), run_time=0.4)
+        self.remove(printf_variaveis, *letras_especificadores)
+        self.add(printf_final)
+        self.wait(1.5)
+        self.play(FadeOut(*self.mobjects))
+
+class Especificadores(MovingCameraScene):
+    def construct(self):
+        roxo = "#AA77C7"
+        verde_string = "#C3E88D"
+
+        #Texto com font_size 10x maior e scale(0.1) para não estragar o espaçamento das letras
+        def texto(conteudo, tamanho, **kwargs):
+            return Text(conteudo, font_size=tamanho*10, disable_ligatures=True, **kwargs).scale(0.1)
+
+        #Tabela: cabeçalho + uma linha por especificador
+        linhas_tabela = [
+            ("%c", "Um único caractere"),
+            ("%d e %i", "Um número inteiro com sinal"),
+            ("%f", "Um número com casas decimais"),
+            ("%s", "Uma sequência de caracteres"),
+            ("%u", "Um número inteiro sem sinal"),
+            ("%%", "O próprio caractere %"),
+        ]
+        conteudo_tabela = [[texto("Especificador", 30, weight=BOLD, color=roxo), texto("O que será impresso", 30, weight=BOLD, color=roxo)]]
+        for especificador, descricao in linhas_tabela:
+            conteudo_tabela.append([texto(especificador, 28, font="Monospace", color=verde_string), texto(descricao, 26)])
+
+        tabela = MobjectTable(conteudo_tabela, v_buff=0.4, h_buff=0.8,
+                              arrange_in_grid_config={"col_alignments": "cl"},
+                              line_config={"color": GRAY, "stroke_width": 2})
+        tabela.move_to(ORIGIN)
+        grade = VGroup(tabela.get_horizontal_lines(), tabela.get_vertical_lines())
+
+        #Código de exemplo, -5 visto como int e como unsigned int
+        texto_codigo = 'int numero = -5;\nprintf("%d", numero);\nprintf("%u", numero);'
+        codigo = criar_codigo(texto_codigo)
+
+        #Saídas no terminal: texto branco monoespaçado com a mesma altura de letra do código
+        saidas = VGroup()
+        flechas = VGroup()
+        for linha, valor in zip(codigo.code_lines[1:], ("-5", "4294967291")):
+            flecha = Arrow(ORIGIN, RIGHT*0.8, buff=0, stroke_width=4, max_tip_length_to_length_ratio=0.3, color=WHITE).next_to(linha, RIGHT, buff=0.3)
+            saida = Text(valor, font="Monospace", font_size=240).scale(0.1).next_to(flecha, RIGHT, buff=0.3)
+            flechas.add(flecha)
+            saidas.add(saida)
+        exemplo = VGroup(codigo, flechas, saidas).scale(0.85)
+
+        #Posições finais: tabela menor à esquerda e o exemplo à direita
+        escala_tabela = 0.6
+        largura_tabela = tabela.width*escala_tabela
+        espaco = 0.6
+        largura_total = largura_tabela + espaco + exemplo.width
+        centro_tabela = LEFT*(largura_total/2 - largura_tabela/2)
+        exemplo.move_to(RIGHT*(largura_total/2 - exemplo.width/2))
+        #As flechas e saídas são alinhadas em x pelo fim do código, então as linhas do printf têm o mesmo tamanho
+
+        #Grade aparece e depois as linhas de cima para baixo
+        self.play(FadeIn(grade), run_time=0.8)
+        self.play(LaggedStart(*[FadeIn(linha, shift=DOWN*0.2) for linha in tabela.get_rows()], lag_ratio=0.35), run_time=2.2)
+        self.wait(2.5)
+
+        #Tabela diminui e vai para a esquerda, o código aparece com write
+        self.play(tabela.animate.scale(escala_tabela).move_to(centro_tabela), run_time=1)
+        #Write só nas linhas: no Code inteiro o Write desenha o contorno do retângulo de fundo por um instante
+        self.play(Write(codigo.code_lines), run_time=1.8)
+        self.add(codigo)
+        self.wait(1.5)
+
+        #%d: -5
+        self.play(GrowArrow(flechas[0]), run_time=0.5)
+        self.play(FadeIn(saidas[0], shift=RIGHT*0.2), run_time=0.5)
+        self.wait(1)
+
+        #%u: o mesmo dado interpretado como inteiro sem sinal
+        self.play(GrowArrow(flechas[1]), run_time=0.5)
+        self.play(FadeIn(saidas[1], shift=RIGHT*0.2), run_time=0.5)
+        self.wait(3)
+
+        #Tabela completa: as linhas anteriores + os outros especificadores, ajustada para caber na altura da tela
+        linhas_extras = [
+            ("%e e %E", "Um número em notação científica"),
+            ("%g e %G", "O que for menor, %e ou %f"),
+            ("%o", "Um número em formato octal"),
+            ("%x e %X", "Um número em formato hexadecimal"),
+            ("%p", "Um ponteiro"),
+        ]
+        conteudo_completo = [[texto("Especificador", 30, weight=BOLD, color=roxo), texto("O que será impresso", 30, weight=BOLD, color=roxo)]]
+        for especificador, descricao in linhas_tabela + linhas_extras:
+            conteudo_completo.append([texto(especificador, 28, font="Monospace", color=verde_string), texto(descricao, 26)])
+        tabela_completa = MobjectTable(conteudo_completo, v_buff=0.4, h_buff=0.8,
+                                       arrange_in_grid_config={"col_alignments": "cl"},
+                                       line_config={"color": GRAY, "stroke_width": 2})
+        if tabela_completa.height > 7.4:
+            tabela_completa.scale_to_fit_height(7.4)
+        tabela_completa.move_to(ORIGIN).to_edge(UP, buff=0.3)
+
+        linhas_antigas = tabela.get_rows()
+        linhas_novas = tabela_completa.get_rows()
+        horizontais_antigas = tabela.get_horizontal_lines()
+        horizontais_novas = tabela_completa.get_horizontal_lines()
+        n_antigas = len(linhas_antigas)
+
+        #Esses seriam os especificadores mais importantes...: código some, tabela volta ao tamanho original e sobe
+        self.play(FadeOut(exemplo),
+                  tabela.animate.scale(1/escala_tabela).move_to(ORIGIN).to_edge(UP, buff=0.3), run_time=1)
+        self.wait(1.5)
+
+        #...porém, existem diversos outros: a tabela se ajusta e as linhas novas entram de cima para baixo
+        #A linha vertical primeiro vai só até o fim das linhas antigas e depois cresce junto com as novas
+        vertical_nova = tabela_completa.get_vertical_lines()
+        vertical_parcial = vertical_nova.copy()
+        #O ponto de baixo da linha é trocado pelo corte, mantendo a mesma direção da linha da tabela para o transform não inverter
+        inicio, fim = vertical_nova[0].get_start(), vertical_nova[0].get_end()
+        corte = np.array([vertical_nova[0].get_x(), horizontais_novas[n_antigas - 1].get_y(), 0])
+        if inicio[1] < fim[1]:
+            inicio = corte
+        else:
+            fim = corte
+        vertical_parcial[0].put_start_and_end_on(inicio, fim)
+        self.play(*[ReplacementTransform(linhas_antigas[i], linhas_novas[i]) for i in range(n_antigas)],
+                  *[ReplacementTransform(horizontais_antigas[i], horizontais_novas[i]) for i in range(len(horizontais_antigas))],
+                  ReplacementTransform(tabela.get_vertical_lines(), vertical_parcial), run_time=1)
+        self.play(LaggedStart(*[AnimationGroup(FadeIn(horizontais_novas[i - 1]), FadeIn(linhas_novas[i], shift=DOWN*0.2))
+                                for i in range(n_antigas, len(linhas_novas))], lag_ratio=0.35),
+                  ReplacementTransform(vertical_parcial, vertical_nova, rate_func=linear), run_time=2)
+        self.remove(tabela)
+        self.add(tabela_completa)
+        self.wait(1)
+
+        #...comentados mais a fundo no PDF: a tabela fica de fundo e o pdf aparece
+        pdf = SVGMobject("assets\\pdf").scale_to_fit_height(3.5)
+        self.play(tabela_completa.animate.set_opacity(0.25), run_time=0.8)
+        self.play(FadeIn(pdf, scale=0.8), run_time=0.8)
         self.wait(2)
+        self.play(FadeOut(*self.mobjects))
 
-
+class EscapeS(MovingCameraScene):
+    def construct(self):
+        titulo = Text("Escape Sequences", weight=BOLD, font_size = 100).scale(0.6)
+        descr = Text("Formatação de output", weight=BOLD, font_size = 100).scale(0.3)
+        criaCapitulo(self, titulo, descr, 2)
+        
 class Main(MovingCameraScene):
     def construct(self):
         PreIntro.construct(self)
         SiteLogin.construct(self)
+        Intro.construct(self)
         ExplicandoIO.construct(self)
         Outputs.construct(self)
+        Especificadores.construct(self)
