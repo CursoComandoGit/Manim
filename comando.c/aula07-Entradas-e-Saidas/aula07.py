@@ -1,4 +1,6 @@
 from manim import *
+from customTerminal import CustomTerminal
+import random
 
 config.background_color = "#1E1E1E"
 MarkupText.set_default(font = "Manrope")
@@ -6,6 +8,73 @@ Text.set_default(font = "Manrope")
 Circumscribe.set_default(color=WHITE)
 Indicate.set_default(color="#AA77C7")
 
+def scanAnimation(scene, target_mobject, UDbuff = 0, LRbuff = 0, color=GREEN, scan_time=1.0, glow_opacity=0.15):
+    top_y = target_mobject.get_top()[1] + UDbuff
+    bottom_y = target_mobject.get_bottom()[1] - UDbuff
+    left_x = target_mobject.get_left()[0] - LRbuff
+    right_x = target_mobject.get_right()[0] + LRbuff
+    
+    mainLine = Line(
+        start=np.array([left_x, top_y, 0]), 
+        end=np.array([left_x, bottom_y, 0]), 
+        color=color, 
+        stroke_width=2
+    )
+    
+    glow_group = VGroup()
+    for width_mult, opacity in [(3, 0.4), (6, 0.2), (10, 0.1)]:
+        glow_line = mainLine.copy().set_stroke(color=color, width=mainLine.stroke_width * width_mult, opacity=opacity)
+        glow_group.add(glow_line)
+        
+    scanner_beam = VGroup(glow_group, mainLine)
+    
+    scan_tail = Polygon(
+        [left_x, top_y, 0],
+        [left_x, top_y, 0],
+        [left_x, bottom_y, 0],
+        [left_x, bottom_y, 0],
+        color=color,
+        stroke_width=0,
+        fill_opacity=glow_opacity
+    )
+
+    #Não gosto de definir updaters dentro de funções mas posso arrumar depois
+    def update_tail(tail):
+        current_x = scanner_beam.get_center()[0]
+        
+        if current_x - left_x < 0.01:
+            return
+            
+        tail.become(
+            Polygon(
+                [left_x, top_y, 0],
+                [current_x, top_y, 0],
+                [current_x, bottom_y, 0],
+                [left_x, bottom_y, 0],
+                color=color,
+                stroke_width=0,
+                fill_opacity=glow_opacity
+            )
+        )
+    
+    scan_tail.add_updater(update_tail)
+
+    scene.play(FadeIn(scanner_beam), run_time=0.5)
+    scene.add(scan_tail)
+    scene.play(
+        scanner_beam.animate.shift(RIGHT * (right_x - left_x)),
+        run_time=scan_time,
+        rate_func=linear
+    )
+    
+    scan_tail.remove_updater(update_tail)
+    scene.play(
+        scanner_beam.animate.scale(0),
+        scan_tail.animate.set_fill(opacity=0),
+        run_time=0.5
+    )
+    scene.remove(scanner_beam, scan_tail)
+    
 def criar_codigo(codeMedia: str, show_background=False):
     if not isinstance(codeMedia, str):
         raise TypeError("Passe uma string (o código ) como parâmetro")
@@ -384,11 +453,11 @@ class ExplicandoIO(MovingCameraScene):
 
         #Card no mesmo padrão do criar_card da aula 05, com a largura ajustada ao conteúdo
         def criar_card(conteudo):
-            caixa = RoundedRectangle(width=conteudo.width + 0.9, height=1.1, corner_radius=0.2, color=roxo, fill_color=roxo, fill_opacity=0.15, stroke_width=3)
+            caixa = RoundedRectangle(width=conteudo.width + 0.9, height=1.1, corner_radius=0.2,
+                                     color=roxo, fill_color=roxo, fill_opacity=0.15, stroke_width=3)
             conteudo.move_to(caixa.get_center())
             return VGroup(caixa, conteudo)
 
-        #O manim 0.19 conta os espaços como caracteres e o 0.20 não. O índice passado é do texto e é convertido se precisar
         def letra(mob, conteudo, indice):
             if len(mob) != len(conteudo):
                 indice = len(conteudo[:indice].replace(" ", ""))
@@ -416,8 +485,8 @@ class ExplicandoIO(MovingCameraScene):
 
         #Os pontos continuam passando por updater enquanto tudo reduz e sobe
         self.play(ponte.animate.scale(0.5, scale_stroke=True).to_edge(UP, buff=0.3), run_time=1)
-        self.play(LaggedStart(*[FadeIn(funcao, shift=UP*0.3) for funcao in funcoes], lag_ratio=0.15), run_time=2)
-        self.wait(2)
+        self.play(LaggedStart(*[FadeIn(funcao, shift=UP*0.3) for funcao in funcoes], lag_ratio=0.15), run_time=0.8)
+        self.wait(2.5)
 
         #As funções se juntam no card
         self.play(*[funcao.animate.move_to(card_stdio).scale(0.3).set_opacity(0) for funcao in funcoes],
@@ -454,7 +523,8 @@ class Outputs(MovingCameraScene):
 
         #Mesmo card da classe ExplicandoIO, começa abaixo da tela
         nome_stdio = Text("stdio.h", font_size=440, weight=BOLD, color=roxo, disable_ligatures=True).scale(0.1)
-        caixa_stdio = RoundedRectangle(width=nome_stdio.width + 0.9, height=1.1, corner_radius=0.2, color=roxo, fill_color=roxo, fill_opacity=0.15, stroke_width=3)
+        caixa_stdio = RoundedRectangle(width=nome_stdio.width + 0.9, height=1.1, corner_radius=0.2,
+                                       color=roxo, fill_color=roxo, fill_opacity=0.15, stroke_width=3)
         #O fundo do card é transparente, então uma cópia com a cor do fundo da cena esconde o printf atrás dele
         fundo_stdio = caixa_stdio.copy().set_fill(config.background_color, 1).set_stroke(width=0)
         card_stdio = VGroup(fundo_stdio, caixa_stdio, nome_stdio.move_to(caixa_stdio)).move_to(DOWN*5)
@@ -469,8 +539,13 @@ class Outputs(MovingCameraScene):
                 fim = len(conteudo[:fim].replace(" ", ""))
             return codigo.code_lines[0][inicio:fim]
 
-        texto_ola = 'printf("Olá, mundo!");'
-        texto_formatado = 'printf("Olá, mundo! %s", "Esta é a aula 7");'
+        texto_ola = 'printf("Olá mundo!");'
+        texto_formatado = 'printf("Olá mundo! %s", var);'
+        texto_declaracao = 'char var[] = "Esta é a aula 7";'
+        #Índices calculados pelos textos, assim continuam certos se a frase mudar
+        fim_ola = texto_ola.index('");')               #segundas aspas do printf("Olá mundo!")
+        aspas_formatado = texto_formatado.index('",')  #segundas aspas do printf formatado
+        inicio_s = texto_formatado.index('%s')
 
         #Versão com o parâmetro. O caractere 7 é o primeiro depois do parêntese e os 2 últimos são ");"
         printf_texto = criar_codigo(texto_ola).scale(1.25).move_to(UP)
@@ -479,10 +554,15 @@ class Outputs(MovingCameraScene):
         lugar_parametro = parametro.get_center()
         parametro.shift(UP*3)
 
-        #Versão com a formatação. Até o caractere 19 (printf("Olá, mundo!) é igual à anterior
+        #Versão com a formatação. Até as segundas aspas (printf("Olá mundo!) é igual à anterior
         printf_formatado = criar_codigo(texto_formatado).scale(1.25).move_to(UP)
-        # %s e , "Esta é a aula 7"
-        novos_parametros = VGroup(trecho(printf_formatado, texto_formatado, 19, 22), trecho(printf_formatado, texto_formatado, 23, -2))
+        #Declaração da string na linha de cima, alinhada à esquerda com o printf
+        declaracao = criar_codigo(texto_declaracao).scale(1.25).next_to(printf_formatado, UP, buff=0.1, aligned_edge=LEFT)
+        enquadramento_formatado = VGroup(declaracao, printf_formatado).get_center()
+        # %s, , var e a declaração caem juntos
+        novos_parametros = VGroup(trecho(printf_formatado, texto_formatado, fim_ola, aspas_formatado),
+                                  trecho(printf_formatado, texto_formatado, aspas_formatado + 1, -2),
+                                  declaracao.code_lines)
         novos_parametros.shift(UP*5)
 
         #Movimento brusco do card: recua e dá um tranco para cima no instante em que o bounce do printf sai
@@ -517,17 +597,17 @@ class Outputs(MovingCameraScene):
         #Segunda aspas e segundo parênteses abrem espaço enquanto a câmera afasta, o texto novo cai igual ao anterior
         self.wait(1.5)
         self.play(ReplacementTransform(printf_texto.background, printf_formatado.background),
-                  ReplacementTransform(trecho(printf_texto, texto_ola, 0, 19), trecho(printf_formatado, texto_formatado, 0, 19)),
-                  ReplacementTransform(trecho(printf_texto, texto_ola, 19, 20), trecho(printf_formatado, texto_formatado, 22, 23)),
-                  ReplacementTransform(trecho(printf_texto, texto_ola, 20), trecho(printf_formatado, texto_formatado, -2)),
-                  camera.animate.set(width=14), run_time=0.7)
+                  ReplacementTransform(trecho(printf_texto, texto_ola, 0, fim_ola), trecho(printf_formatado, texto_formatado, 0, fim_ola)),
+                  ReplacementTransform(trecho(printf_texto, texto_ola, fim_ola, fim_ola + 1), trecho(printf_formatado, texto_formatado, aspas_formatado, aspas_formatado + 1)),
+                  ReplacementTransform(trecho(printf_texto, texto_ola, fim_ola + 1), trecho(printf_formatado, texto_formatado, -2)),
+                  camera.animate.move_to(enquadramento_formatado).set(width=11), run_time=0.7)
         self.play(novos_parametros.animate.shift(DOWN*5), rate_func=rate_functions.ease_out_cubic, run_time=1.1)
         self.remove(printf_texto)
-        self.add(printf_formatado)
+        self.add(printf_formatado, declaracao.code_lines)
         self.wait(1.5)
 
         #Especificadores que saem do %s. %d e %i ficam no meio da linha de cima para o card ficar em cima deles
-        simbolo_s = trecho(printf_formatado, texto_formatado, 20, 22)
+        simbolo_s = trecho(printf_formatado, texto_formatado, inicio_s, inicio_s + 2)
         nomes_especificadores = ["%c", "%d", "%i", "%f", "%s", "%lf", "%u", "%x"]
         especificadores = VGroup(*[Text(nome, font="Monospace", font_size=100, color=simbolo_s[0].get_color()).scale(0.3) for nome in nomes_especificadores])
         especificadores.arrange_in_grid(rows=2, cols=4, buff=(0.8, 0.5)).move_to(UP*6)
@@ -536,7 +616,8 @@ class Outputs(MovingCameraScene):
 
         #Card igual ao criar_card da aula 05
         def criar_card(nome, cor, exemplo):
-            caixa = RoundedRectangle(width=2.2, height=2.4, corner_radius=0.2, color=cor, fill_color=cor, fill_opacity=0.15, stroke_width=3)
+            caixa = RoundedRectangle(width=2.2, height=2.4, corner_radius=0.2,
+                                     color=cor, fill_color=cor, fill_opacity=0.15, stroke_width=3)
             rotulo_nome = Text(nome, font_size=30, color=cor, weight=BOLD, disable_ligatures=True)
             rotulo_exemplo = Text(exemplo, font_size=26)
             conteudo = VGroup(rotulo_nome, rotulo_exemplo).arrange(DOWN, buff=0.5)
@@ -557,12 +638,14 @@ class Outputs(MovingCameraScene):
             porcento = trecho(printf_variaveis, texto_variaveis, i, i + 1)
             traco = trecho(printf_variaveis, texto_variaveis, i + 1, i + 2).set_opacity(0)
             porcentos.append(porcento)
-            quadrados.add(Square(side_length=porcento.height, color="#87916c", fill_color="#87916c", fill_opacity=1, stroke_width=0).move_to([traco.get_x(), porcento.get_y(), 0]))
+            quadrados.add(Square(side_length=porcento.height, color="#87916c",
+                                 fill_color="#87916c", fill_opacity=1, stroke_width=0).move_to([traco.get_x(), porcento.get_y(), 0]))
 
         #Os especificadores se espalham para cima e a câmera vai até eles, deixando o printf de fora
-        self.play(*[TransformFromCopy(simbolo_s, especificador, rate_func=squish_rate_func(smooth, i*0.05, i*0.05 + 0.65)) for i, especificador in enumerate(especificadores)],
+        self.play(*[TransformFromCopy(simbolo_s, especificador, rate_func=squish_rate_func(smooth, i*0.05, i*0.05 + 0.65))
+                    for i, especificador in enumerate(especificadores)],
                   camera.animate.move_to(UP*6.5).set(width=7.5), run_time=1.6)
-        self.remove(printf_formatado)
+        self.remove(printf_formatado, declaracao.code_lines)
         self.wait(1)
 
         #Destaque do %d e %i com o card de int
@@ -633,7 +716,8 @@ class Especificadores(MovingCameraScene):
             ("%u", "Um número inteiro sem sinal"),
             ("%%", "O próprio caractere %"),
         ]
-        conteudo_tabela = [[texto("Especificador", 30, weight=BOLD, color=roxo), texto("O que será impresso", 30, weight=BOLD, color=roxo)]]
+        conteudo_tabela = [[texto("Especificador", 30, weight=BOLD, color=roxo),
+                            texto("O que será impresso", 30, weight=BOLD, color=roxo)]]
         for especificador, descricao in linhas_tabela:
             conteudo_tabela.append([texto(especificador, 28, font="Monospace", color=verde_string), texto(descricao, 26)])
 
@@ -751,6 +835,311 @@ class EscapeS(MovingCameraScene):
         titulo = Text("Escape Sequences", weight=BOLD, font_size = 100).scale(0.6)
         descr = Text("Formatação de output", weight=BOLD, font_size = 100).scale(0.3)
         criaCapitulo(self, titulo, descr, 2)
+
+        #Mesmo trecho da classe Outputs: índices do texto convertidos para o manim 0.19, que conta os espaços
+        def trecho(codigo, conteudo, inicio, fim=None):
+            inicio, fim, _ = slice(inicio, fim).indices(len(conteudo))
+            if len(codigo.code_lines[0]) != len(conteudo):
+                inicio = len(conteudo[:inicio].replace(" ", ""))
+                fim = len(conteudo[:fim].replace(" ", ""))
+            return codigo.code_lines[0][inicio:fim]
+
+        branco_codigo = "#EEFFFF"
+        escala = 1.5
+
+        #O espaço entre Escape e Sequences dá lugar a '\' + quadrado (o '-' fica invisível) e depois a '\n'
+        texto_inicial = 'printf("Escape Sequences");'
+        texto_barra = r'printf("Escape \- Sequences");'
+        texto_final = r'printf("Escape \n Sequences");'
+        printf_inicial = criar_codigo(texto_inicial).scale(escala)
+        printf_barra = criar_codigo(texto_barra).scale(escala)
+        printf_final = criar_codigo(texto_final).scale(escala)
+
+        #No código final o \n inteiro fica branco, então a barra já começa branca para não mudar de cor na troca
+        barra = trecho(printf_barra, texto_barra, 15, 16).set_color(branco_codigo)
+        traco = trecho(printf_barra, texto_barra, 16, 17).set_opacity(0)
+        quadrado = Square(side_length=barra.height, color=branco_codigo,
+                          fill_color=branco_codigo, fill_opacity=1, stroke_width=0).move_to([traco.get_x(), barra.get_y(), 0])
+        escape = VGroup(barra, quadrado)
+
+        numero_um = Text("1", font_size=480, weight=BOLD).scale(0.1).next_to(escape, UP, buff=0.35)
+
+        letra_n = trecho(printf_final, texto_final, 16, 17)
+        letra_n.shift(UP*5)
+
+        terminal = CustomTerminal(width=8, height=4).move_to(DOWN*1.1)
+
+        #Prompt montado à mão para poder esperar antes de digitar o comando nele
+        def novo_prompt():
+            prompt = Text("manim@manim:~$ ", font="Monospace", font_size=terminal.font_size, color=GREEN)
+            linha = VGroup(prompt)
+            terminal._place_line(linha)
+            terminal.text_container.add(linha)
+            return linha
+
+        def digitar(linha, comando, velocidade=0.06):
+            texto_comando = Text(comando, font="Monospace", font_size=terminal.font_size).next_to(linha[0], RIGHT, buff=0.1)
+            linha.add(texto_comando)
+            return AddTextLetterByLetter(texto_comando, run_time=len(comando)*velocidade)
+
+        #Printf aparece com write (só as linhas, para o contorno do fundo não aparecer)
+        self.play(Write(printf_inicial.code_lines), run_time=1.5)
+        self.add(printf_inicial)
+        self.wait(1)
+
+        #Código expande e a barra com o quadrado entram entre Escape e Sequences
+        self.play(ReplacementTransform(trecho(printf_inicial, texto_inicial, 0, 15), trecho(printf_barra, texto_barra, 0, 15)),
+                  ReplacementTransform(trecho(printf_inicial, texto_inicial, 15), trecho(printf_barra, texto_barra, 18)),
+                  FadeIn(barra, scale=0.5, rate_func=squish_rate_func(smooth, 0.3, 1)),
+                  GrowFromCenter(quadrado, rate_func=squish_rate_func(smooth, 0.3, 1)), run_time=0.8)
+        self.remove(printf_inicial)
+        self.add(printf_barra, quadrado)
+        self.wait(1)
+
+        #Scan na barra + quadrado e o 1 sai do quadrado: os dois caracteres contam como um só
+        scanAnimation(self, escape, UDbuff=0.15, LRbuff=0.1)
+        self.play(GrowFromPoint(numero_um, quadrado.get_center()), run_time=0.6)
+        self.wait(2.5)
+
+        #O escape sequence mais comum... é o \n: o n cai no quadrado, que some logo em seguida
+        self.play(FadeOut(numero_um), run_time=0.25)
+        self.play(letra_n.animate.shift(DOWN*5), rate_func=rate_functions.ease_out_cubic, run_time=1.1)
+        self.play(FadeOut(quadrado, scale=0.5), run_time=0.4)
+        self.remove(printf_barra, letra_n)
+        self.add(printf_final)
+        self.wait(1)
+
+        #Printf vai rápido para cima e o terminal aparece embaixo
+        self.play(printf_final.animate.scale(1/escala).move_to(UP*2.4),
+                  FadeIn(terminal, shift=UP*0.3), run_time=0.6)
+
+        #Roda o ./a.out e a saída quebra a linha no \n
+        self.play(terminal.animate_prompt_and_command(command="./a.out", typing_speed=0.06))
+        self.wait(0.2)
+        terminal.add_line("Escape ")
+        terminal.add_line(" Sequences")
+
+        linha_atual = novo_prompt()
+        self.wait(3)
+
+        #Depois de um tempo o terminal dá clear
+        self.play(digitar(linha_atual, "clear"))
+        self.wait(0.3)
+        self.remove(*terminal.text_container.submobjects)
+        terminal.clear_terminal()
+        #Remover as linhas separa o terminal em partes na cena, então ele é adicionado de novo para a linha nova aparecer
+        self.add(terminal)
+        linha_atual = novo_prompt()
+        self.wait(2)
+
+        #Analise esse exemplo...: o printf inteiro sai e o novo aparece no lugar
+        texto_quebra = r'printf("Linha1\nLinha2\n\nLinha3");'
+        printf_quebra = criar_codigo(texto_quebra).move_to(printf_final)
+
+        self.play(printf_final.animate.shift(UP*6), rate_func=rate_functions.ease_in_cubic, run_time=0.8)
+        self.remove(printf_final)
+        self.play(FadeIn(printf_quebra.code_lines, shift=DOWN*0.3), run_time=0.8)
+        self.add(printf_quebra)
+        self.wait(3)
+
+        #Depois de um tempo o terminal compila e executa
+        self.play(digitar(linha_atual, "gcc quebraLinha.c"))
+        self.wait(0.5)
+        linha_atual = novo_prompt()
+        self.play(digitar(linha_atual, "./a.out"))
+
+        #Linha invisível marca onde o cursor está: o cursor do terminal vai para o começo dela
+        def nova_linha_vazia():
+            return terminal.add_line("Linha1").set_opacity(0)
+        linha_cursor = [nova_linha_vazia()]
+
+        #Imprime o texto na linha do cursor e quebra a linha quantas vezes pedir
+        def imprimir(texto, quebras):
+            marcador = linha_cursor[0]
+            linha = Text(texto, font="Monospace", font_size=terminal.font_size).move_to(marcador, aligned_edge=LEFT)
+            terminal.text_container.remove(marcador)
+            terminal.text_container.add(linha)
+            self.play(FadeIn(linha), run_time=0.2)
+            for _ in range(quebras):
+                linha_cursor[0] = nova_linha_vazia()
+
+        #Quadrado de leitura: cobre os caracteres de inicio até fim (sem incluir fim) do printf
+        linha_codigo = printf_quebra.code_lines[0]
+        passo = (linha_codigo[-1].get_x() - linha_codigo[0].get_x())/(len(linha_codigo) - 1)
+        x_inicial = np.mean([caractere.get_x() - i*passo for i, caractere in enumerate(linha_codigo)])
+        def caixa_leitura(inicio, fim):
+            centro = x_inicial + (inicio + fim - 1)/2*passo
+            return Rectangle(width=(fim - inicio)*passo + 0.04, height=0.42, fill_color="#AA77C7", fill_opacity=0.35,
+                             stroke_color="#AA77C7", stroke_width=2).move_to([centro, linha_codigo.get_y(), 0])
+
+        def ler(inicio, fim, tempo=0.12):
+            for i in range(inicio, fim):
+                self.play(Transform(caixa, caixa_leitura(i, i + 1)), rate_func=linear, run_time=tempo)
+
+        #Cada \n é uma quebra de linha: o quadrado lê Linha1 e cresce rápido em volta do \n
+        caixa = caixa_leitura(8, 9)
+        self.play(FadeIn(caixa), run_time=0.3)
+        ler(9, 14)
+        self.play(Transform(caixa, caixa_leitura(14, 16)), run_time=0.2)
+        imprimir("Linha1", 1)
+        self.wait(0.6)
+
+        #Linha2 e os dois \n
+        ler(16, 22)
+        self.play(Transform(caixa, caixa_leitura(22, 24)), run_time=0.2)
+        self.wait(0.3)
+        self.play(Transform(caixa, caixa_leitura(24, 26)), run_time=0.2)
+        imprimir("Linha2", 2)
+        self.wait(0.6)
+
+        #Linha3
+        ler(26, 32)
+        imprimir("Linha3", 0)
+        self.play(FadeOut(caixa), run_time=0.3)
+        linha_atual = novo_prompt()
+        self.wait(2)
+
+        self.play(FadeOut(*self.mobjects))
+
+class Escape0(MovingCameraScene):
+    def construct(self):
+        camera = self.camera.frame
+        roxo = "#AA77C7"
+        branco_codigo = "#EEFFFF"
+        vermelho = "#FF5F56"
+
+        #\0 e o nome embaixo
+        barra_zero = Text(r"\0", font="Monospace", font_size=1200, color=branco_codigo).scale(0.1).move_to(UP*0.4)
+        nome_nulo = Text("Caractere Nulo", font_size=500, weight=BOLD).scale(0.1).next_to(barra_zero, DOWN, buff=0.5)
+
+        #String de exemplo
+        string_comando = criar_codigo('"Projeto Comando"').scale(1.5).move_to(ORIGIN)
+
+        #Fita de bits no estilo da máquina de Turing da aula 01, começando na borda esquerda e passando da tela
+        gerador = random.Random(7)
+        largura_celula = 0.5
+        altura_celula = 0.75
+        tamanho_bit = 340
+        quantidade_celulas = 170
+        fita = VGroup()
+        for _ in range(quantidade_celulas):
+            celula = Rectangle(height=altura_celula, width=largura_celula, fill_color=BLUE_E,
+                               fill_opacity=0.4, stroke_color=WHITE, stroke_width=2)
+            bit = Text(gerador.choice("01"), font_size=tamanho_bit).scale(0.1).move_to(celula)
+            fita.add(VGroup(celula, bit))
+        fita.arrange(RIGHT, buff=0)
+        fita.move_to(ORIGIN, aligned_edge=LEFT).set_x(-config.frame_width/2 + 0.25, direction=LEFT)
+
+        cabecote = Triangle(fill_color=roxo, fill_opacity=0.6, stroke_color="#8728BE", stroke_width=4).scale(0.25)
+        def posicao_cabecote(indice):
+            return fita[indice][0].get_center() + DOWN*0.85
+        cabecote.move_to(posicao_cabecote(0))
+
+        #Delimitação depois do bit 27
+        indice_fim = 26
+        x_fim = fita[indice_fim].get_right()[0]
+        delimitacao = Line([x_fim, 0.7, 0], [x_fim, -0.7, 0], color=vermelho, stroke_width=5)
+        #O bit 27 fica perto da borda direita, então o texto termina na linha em vez de ficar centralizado
+        texto_fim = Text("String termina aqui", font_size=280,
+                         weight=BOLD, color=vermelho).scale(0.1).next_to(delimitacao, UP, buff=0.2, aligned_edge=RIGHT)
+
+        #Célula embaixo do cabeçote fica acesa
+        def destacar_leitura(grupo, dt):
+            for celula, _ in grupo:
+                if abs(celula.get_x() - cabecote.get_x()) < largura_celula/2:
+                    celula.set_fill(BLUE_C, opacity=0.9)
+                else:
+                    celula.set_fill(BLUE_E, opacity=0.4)
+
+        #Câmera segue o cabeçote com atraso, mantendo ele um pouco à direita do centro.
+        #volta mistura o seguimento com a posição original (0 = segue, 1 = posição original),
+        #assim a câmera começa a voltar sem parar de repente
+        seguimento = [0.0]
+        volta = ValueTracker(0)
+        def seguir_cabecote(grupo, dt):
+            alvo = cabecote.get_x() - 1.5
+            seguimento[0] += (alvo - seguimento[0])*min(1, 2.5*dt)
+            camera.set_x((1 - volta.get_value())*seguimento[0])
+
+        #Animações começam
+        #Um outro escape sequence... é o \0, também chamado de caractere nulo
+        self.play(FadeIn(barra_zero), run_time=0.8)
+        self.play(Write(nome_nulo), run_time=1.2)
+        self.wait(2)
+        self.play(FadeOut(barra_zero, nome_nulo), run_time=0.6)
+
+        #O computador sabe onde a string começa...
+        self.play(FadeIn(string_comando.code_lines), run_time=0.8)
+        self.wait(1.5)
+        #A string vira só as células visíveis, as de fora da tela entram direto
+        visiveis = VGroup(*[grupo for grupo in fita if grupo.get_left()[0] < config.frame_width/2])
+        self.play(ReplacementTransform(string_comando.code_lines, visiveis), run_time=1.2)
+        self.remove(visiveis)
+        self.add(fita)
+        self.play(GrowFromCenter(cabecote), run_time=0.4)
+        self.play(GrowFromCenter(delimitacao), FadeIn(texto_fim, shift=DOWN*0.2), run_time=0.6)
+        self.wait(1)
+
+        #...mas não sabe onde ela termina: lê rápido até a delimitação e para um pouco
+        fita.add_updater(destacar_leitura)
+        self.play(cabecote.animate.move_to(posicao_cabecote(indice_fim)), rate_func=linear, run_time=1.5)
+        self.wait(0.6)
+
+        #Sem marcação, continua lendo a memória vizinha por 3 segundos com a câmera atrás
+        seguimento[0] = camera.get_x()
+        fita.add_updater(seguir_cabecote)
+        celulas_por_segundo = 30
+        indice_final = indice_fim + 3*celulas_por_segundo
+        self.play(cabecote.animate.move_to(posicao_cabecote(indice_final)), rate_func=linear, run_time=3)
+
+        #Para resolver isso, é usado o \0: fora de vista, os primeiros 8 bits viram o 'o' e o limite vai para o oitavo bit
+        def trocar_bit(indice, valor):
+            return Text(valor, font_size=tamanho_bit).scale(0.1).move_to(fita[indice][0])
+        for indice, valor in enumerate("01101111"):
+            fita[indice][1].become(trocar_bit(indice, valor))
+        #A linha fica mais alta para o texto ficar acima das chaves que aparecem depois
+        x_limite = fita[7].get_right()[0]
+        delimitacao.put_start_and_end_on([x_limite, 1.7, 0], [x_limite, -0.7, 0])
+        texto_fim.next_to(delimitacao, UP, buff=0.2)
+
+        #Câmera volta rápido enquanto o cabeçote continua lendo na mesma velocidade, longe do fim da fita
+        tempo_volta = 0.8
+        indice_volta = indice_final + int(celulas_por_segundo*tempo_volta)
+        self.play(cabecote.animate(rate_func=linear).move_to(posicao_cabecote(indice_volta)),
+                  volta.animate(rate_func=smooth).set_value(1), run_time=tempo_volta)
+        fita.remove_updater(seguir_cabecote)
+        camera.set_x(0)
+        fita.remove_updater(destacar_leitura)
+        self.remove(cabecote)
+        for celula, _ in fita:
+            celula.set_fill(BLUE_E, opacity=0.4)
+
+        #Os 8 bits depois do limite viram 0
+        #Transforms separados com atraso em vez de LaggedStart: o LaggedStart coloca um grupo novo na cena com esses bits,
+        #o que separa a fita em células soltas e o updater de leitura para de funcionar
+        self.play(*[Transform(fita[indice][1], trocar_bit(indice, "0"), rate_func=squish_rate_func(smooth, k*0.1, k*0.1 + 0.3))
+                    for k, indice in enumerate(range(8, 16))], run_time=1.5)
+        self.wait(1.5)
+
+        #Chaves em cima: 'o' antes do limite e '\0' nos bits zerados
+        chave_o = Brace(VGroup(*fita[:8]), UP, buff=0.1)
+        rotulo_o = criar_codigo("'o'").scale(1.6).next_to(chave_o, UP, buff=0.1)
+        chave_nulo = Brace(VGroup(*fita[8:16]), UP, buff=0.1)
+        rotulo_nulo = criar_codigo(r"'\0'").scale(1.6).next_to(chave_nulo, UP, buff=0.1)
+        self.play(GrowFromCenter(chave_o), FadeIn(rotulo_o.code_lines, shift=DOWN*0.2), run_time=0.6)
+        self.wait(1.5)
+        self.play(GrowFromCenter(chave_nulo), FadeIn(rotulo_nulo.code_lines, shift=DOWN*0.2), run_time=0.6)
+        self.wait(1)
+
+        #Cabeçote volta e lê rápido só os 8 primeiros bits
+        cabecote.move_to(posicao_cabecote(0))
+        self.play(FadeIn(cabecote), run_time=0.4)
+        fita.add_updater(destacar_leitura)
+        self.play(cabecote.animate.move_to(posicao_cabecote(7)), rate_func=linear, run_time=0.7)
+        self.wait(2)
+
+        self.play(FadeOut(*self.mobjects))
+        self.wait(0.25)
         
 class Main(MovingCameraScene):
     def construct(self):
@@ -760,3 +1149,6 @@ class Main(MovingCameraScene):
         ExplicandoIO.construct(self)
         Outputs.construct(self)
         Especificadores.construct(self)
+        EscapeS.construct(self)
+        Escape0.construct(self)
+        
