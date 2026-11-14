@@ -335,6 +335,25 @@ class SiteLogin(MovingCameraScene):
         frente_pasta = Polygon(*[ponto_pasta(x, y) for x, y in [[2.03,11], [4.11,11], [5.25,7], [16,7], [14,14], [0,14]]],
                                fill_color=roxo, fill_opacity=1, stroke_width=0)
 
+        #Pasta montada à mão pelas coordenadas dos svgs: t = 0 é a pasta aberta e t = 1 a fechada.
+        #A frente gira em volta da base até ficar reta e a aba de trás cresce até o tamanho da pasta fechada
+        def interpolar(a, b, t):
+            return a + (b - a)*t
+
+        def forma_pasta(t):
+            costas = [(0, 1), (interpolar(5, 6, t), 1), (interpolar(8, 9, t), interpolar(3, 4, t)),
+                      (interpolar(13, 16, t), interpolar(3, 4, t)), (interpolar(13, 16, t), 5),
+                      (3.7457, 5), (2.03, 11), (4.11, 11), (4.11, 14), (0, 14)]
+            #Lado da frente: na pasta aberta é inclinado (2 para a direita e 7 para cima), na fechada é reto com 10 de altura
+            angulo = interpolar(np.arctan2(7, 2), PI/2, t)
+            comprimento = interpolar(np.sqrt(53), 10, t)
+            inclinacao, altura = comprimento*np.cos(angulo), comprimento*np.sin(angulo)
+            esquerda, direita = interpolar(3.25, 0, t), interpolar(14, 16, t)
+            #Pontos no mesmo sentido (horário) das costas, senão o Union trata a parte sobreposta como buraco
+            frente = [(esquerda + inclinacao, 14 - altura), (direita + inclinacao, 14 - altura), (direita, 14), (esquerda, 14)]
+            poligono = lambda pontos: Polygon(*[ponto_pasta(x, y) for x, y in pontos])
+            return Union(poligono(costas), poligono(frente), fill_color=roxo, fill_opacity=1, stroke_width=0)
+
         #Câmera vai até o card e acompanha ele entrando no processamento
         self.play(FadeIn(card_input, shift=RIGHT*0.5), camera.animate.move_to(card_input).set(width=8.5), run_time=1)
         self.bring_to_front(programa)
@@ -356,7 +375,14 @@ class SiteLogin(MovingCameraScene):
         self.add(card_output, frente_pasta)
         self.play(card_output.animate.move_to(frente_pasta).shift(RIGHT*0.25), run_time=0.8)
         self.remove(card_output, frente_pasta)
-        self.play(ReplacementTransform(pasta_aberta, pasta_fechada), run_time=0.4)
+        #Pasta fecha: a forma é recalculada a cada quadro, com um pequeno passo além do fim para dar a batida
+        pasta_animada = forma_pasta(0)
+        self.remove(pasta_aberta)
+        self.add(pasta_animada)
+        self.play(UpdateFromAlphaFunc(pasta_animada, lambda pasta, alpha: pasta.become(forma_pasta(alpha))),
+                  rate_func=rate_functions.smooth, run_time=0.5)
+        self.remove(pasta_animada)
+        self.add(pasta_fechada)
         self.wait(2.5)
 
         self.play(FadeOut(*self.mobjects))
@@ -513,7 +539,7 @@ class ExplicandoIO(MovingCameraScene):
         self.play(FadeOut(*self.mobjects))
 
         titulo = Text("Outputs / Saídas", weight=BOLD, t2c={"/":"#AA77C7"}, font_size = 100).scale(0.6)
-        descr = Text("Exibindo informações ao usuário", weight=BOLD, font_size = 100).scale(0.3)
+        descr = Text("Exibindo informações", weight=BOLD, font_size = 100).scale(0.3)
         criaCapitulo(self, titulo, descr, 1)
 
 class Outputs(MovingCameraScene):
@@ -528,6 +554,7 @@ class Outputs(MovingCameraScene):
         #O fundo do card é transparente, então uma cópia com a cor do fundo da cena esconde o printf atrás dele
         fundo_stdio = caixa_stdio.copy().set_fill(config.background_color, 1).set_stroke(width=0)
         card_stdio = VGroup(fundo_stdio, caixa_stdio, nome_stdio.move_to(caixa_stdio)).move_to(DOWN*5)
+        self.bring_to_front(card_stdio)
 
         printf = criar_codigo("printf();").scale(1.25).move_to(DOWN*2)
 
@@ -548,7 +575,7 @@ class Outputs(MovingCameraScene):
         inicio_s = texto_formatado.index('%s')
 
         #Versão com o parâmetro. O caractere 7 é o primeiro depois do parêntese e os 2 últimos são ");"
-        printf_texto = criar_codigo(texto_ola).scale(1.25).move_to(UP)
+        printf_texto = criar_codigo(texto_ola).scale(1.25).move_to(UP).set_z_index(-1)
         linha = printf_texto.code_lines[0]
         parametro = linha[7:-2]
         lugar_parametro = parametro.get_center()
@@ -565,7 +592,7 @@ class Outputs(MovingCameraScene):
                                   declaracao.code_lines)
         novos_parametros.shift(UP*5)
 
-        #Movimento brusco do card: recua e dá um tranco para cima no instante em que o bounce do printf sai
+        #Movimento brusco do card: recua e dá um tranco para cima no instante em que o printf sai
         def tranco(t):
             if t < 0.4:
                 return -0.5*smooth(t/0.4)
@@ -575,12 +602,13 @@ class Outputs(MovingCameraScene):
 
         #Animações começam
         self.play(card_stdio.animate.move_to(DOWN*2), run_time=1)
-        self.wait(1.5)
+        self.wait(1.2)
 
         #Printf começa escondido atrás do card
         self.add(printf, card_stdio)
         self.play(card_stdio.animate(rate_func=tranco).shift(UP*0.4),
-                  printf.animate(rate_func=rate_functions.ease_in_out_bounce).move_to(UP), run_time=1.6)
+                  #O printf só sai no tranco do card (40% da animação), por isso o squish
+                  printf.animate(rate_func=squish_rate_func(rate_functions.ease_out_sine, 0.4, 1)).move_to(UP), run_time=1.5)
 
         #Zoom no printf, o card fica fora do enquadramento
         self.play(camera.animate.move_to(printf).set(width=8), run_time=1)
@@ -832,7 +860,7 @@ class Especificadores(MovingCameraScene):
 
 class EscapeS(MovingCameraScene):
     def construct(self):
-        titulo = Text("Escape Sequences", weight=BOLD, font_size = 100).scale(0.6)
+        titulo = Text("Escape Sequences", color = "#AA77C7", weight=BOLD, font_size = 100).scale(0.6)
         descr = Text("Formatação de output", weight=BOLD, font_size = 100).scale(0.3)
         criaCapitulo(self, titulo, descr, 2)
 
@@ -934,12 +962,12 @@ class EscapeS(MovingCameraScene):
 
         #Analise esse exemplo...: o printf inteiro sai e o novo aparece no lugar
         texto_quebra = r'printf("Linha1\nLinha2\n\nLinha3");'
-        printf_quebra = criar_codigo(texto_quebra).move_to(printf_final)
+        printf_quebra = criar_codigo(texto_quebra).move_to(UP*10)
+        self.add(printf_quebra)
 
         self.play(printf_final.animate.shift(UP*6), rate_func=rate_functions.ease_in_cubic, run_time=0.8)
         self.remove(printf_final)
-        self.play(FadeIn(printf_quebra.code_lines, shift=DOWN*0.3), run_time=0.8)
-        self.add(printf_quebra)
+        self.play(printf_quebra.animate.move_to(UP*2.4), rate_func=rate_functions.ease_out_sine, run_time=0.8)
         self.wait(3)
 
         #Depois de um tempo o terminal compila e executa
@@ -954,14 +982,12 @@ class EscapeS(MovingCameraScene):
         linha_cursor = [nova_linha_vazia()]
 
         #Imprime o texto na linha do cursor e quebra a linha quantas vezes pedir
-        def imprimir(texto, quebras):
+        def imprimir(texto):
             marcador = linha_cursor[0]
             linha = Text(texto, font="Monospace", font_size=terminal.font_size).move_to(marcador, aligned_edge=LEFT)
             terminal.text_container.remove(marcador)
             terminal.text_container.add(linha)
-            self.play(FadeIn(linha), run_time=0.2)
-            for _ in range(quebras):
-                linha_cursor[0] = nova_linha_vazia()
+            return AddTextLetterByLetter(linha)
 
         #Quadrado de leitura: cobre os caracteres de inicio até fim (sem incluir fim) do printf
         linha_codigo = printf_quebra.code_lines[0]
@@ -972,29 +998,33 @@ class EscapeS(MovingCameraScene):
             return Rectangle(width=(fim - inicio)*passo + 0.04, height=0.42, fill_color="#AA77C7", fill_opacity=0.35,
                              stroke_color="#AA77C7", stroke_width=2).move_to([centro, linha_codigo.get_y(), 0])
 
-        def ler(inicio, fim, tempo=0.12):
+        def ler(inicio, fim):
+            anim = []
             for i in range(inicio, fim):
-                self.play(Transform(caixa, caixa_leitura(i, i + 1)), rate_func=linear, run_time=tempo)
+                anim.append(Transform(caixa, caixa_leitura(i, i + 1)))
+            return anim
 
         #Cada \n é uma quebra de linha: o quadrado lê Linha1 e cresce rápido em volta do \n
         caixa = caixa_leitura(8, 9)
         self.play(FadeIn(caixa), run_time=0.3)
-        ler(9, 14)
+        self.play(LaggedStart(*ler(9, 14), lag_ratio=0.15, rate_func=linear), imprimir("Linha1"), run_time=0.6)
         self.play(Transform(caixa, caixa_leitura(14, 16)), run_time=0.2)
-        imprimir("Linha1", 1)
+        for _ in range(1):
+            linha_cursor[0] = nova_linha_vazia()
         self.wait(0.6)
 
         #Linha2 e os dois \n
-        ler(16, 22)
+        self.play(LaggedStart(*ler(16, 22), lag_ratio=0.15, rate_func=linear), imprimir("Linha2"), run_time=0.6)
+        
         self.play(Transform(caixa, caixa_leitura(22, 24)), run_time=0.2)
         self.wait(0.3)
         self.play(Transform(caixa, caixa_leitura(24, 26)), run_time=0.2)
-        imprimir("Linha2", 2)
+        for _ in range(2):
+            linha_cursor[0] = nova_linha_vazia()
         self.wait(0.6)
 
         #Linha3
-        ler(26, 32)
-        imprimir("Linha3", 0)
+        self.play(LaggedStart(*ler(26, 32), lag_ratio=0.15, rate_func=linear), imprimir("Linha3"), run_time=0.6)
         self.play(FadeOut(caixa), run_time=0.3)
         linha_atual = novo_prompt()
         self.wait(2)
@@ -1051,15 +1081,18 @@ class Escape0(MovingCameraScene):
                 else:
                     celula.set_fill(BLUE_E, opacity=0.4)
 
-        #Câmera segue o cabeçote com atraso, mantendo ele um pouco à direita do centro.
-        #volta mistura o seguimento com a posição original (0 = segue, 1 = posição original),
-        #assim a câmera começa a voltar sem parar de repente
-        seguimento = [0.0]
-        volta = ValueTracker(0)
-        def seguir_cabecote(grupo, dt):
-            alvo = cabecote.get_x() - 1.5
-            seguimento[0] += (alvo - seguimento[0])*min(1, 2.5*dt)
-            camera.set_x((1 - volta.get_value())*seguimento[0])
+        #Câmera persegue o cabeçote como uma mola amortecida: parte parada, acelera aos poucos e,
+        #com o cabeçote em velocidade constante, fica 2*velocidade/rigidez para trás dele (uns 3.3 de distância)
+        estado_camera = {"x": 0.0, "v": 0.0}
+        rigidez = 9
+        def perseguir_cabecote(grupo, dt):
+            passos = 10
+            for _ in range(passos):
+                erro = cabecote.get_x() - estado_camera["x"]
+                aceleracao = rigidez**2*erro - 2*rigidez*estado_camera["v"]
+                estado_camera["v"] += aceleracao*dt/passos
+                estado_camera["x"] += estado_camera["v"]*dt/passos
+            camera.set_x(estado_camera["x"])
 
         #Animações começam
         #Um outro escape sequence... é o \0, também chamado de caractere nulo
@@ -1086,11 +1119,22 @@ class Escape0(MovingCameraScene):
         self.wait(0.6)
 
         #Sem marcação, continua lendo a memória vizinha por 3 segundos com a câmera atrás
-        seguimento[0] = camera.get_x()
-        fita.add_updater(seguir_cabecote)
+        estado_camera["x"], estado_camera["v"] = camera.get_x(), 0.0
+        fita.add_updater(perseguir_cabecote)
         celulas_por_segundo = 30
         indice_final = indice_fim + 3*celulas_por_segundo
         self.play(cabecote.animate.move_to(posicao_cabecote(indice_final)), rate_func=linear, run_time=3)
+        fita.remove_updater(perseguir_cabecote)
+
+        #Câmera desacelera rápido até parar, saindo da velocidade que tinha (sem tranco), e o cabeçote continua lendo
+        tempo_freio = 0.3
+        #O updater não roda no último passo da animação anterior, então a câmera é adiantada em um quadro para não repetir posição
+        v_freio = estado_camera["v"]
+        x_freio = estado_camera["x"] + v_freio/config.frame_rate
+        indice_freio = indice_final + round(celulas_por_segundo*tempo_freio)
+        self.play(cabecote.animate(rate_func=linear).move_to(posicao_cabecote(indice_freio)),
+                  UpdateFromAlphaFunc(camera, lambda frame, alpha: frame.set_x(x_freio + v_freio*tempo_freio*(alpha - alpha**2/2)),
+                                      rate_func=linear), run_time=tempo_freio)
 
         #Para resolver isso, é usado o \0: fora de vista, os primeiros 8 bits viram o 'o' e o limite vai para o oitavo bit
         def trocar_bit(indice, valor):
@@ -1102,13 +1146,11 @@ class Escape0(MovingCameraScene):
         delimitacao.put_start_and_end_on([x_limite, 1.7, 0], [x_limite, -0.7, 0])
         texto_fim.next_to(delimitacao, UP, buff=0.2)
 
-        #Câmera volta rápido enquanto o cabeçote continua lendo na mesma velocidade, longe do fim da fita
-        tempo_volta = 0.8
-        indice_volta = indice_final + int(celulas_por_segundo*tempo_volta)
+        #Câmera acelera rápido de volta para a posição inicial enquanto o cabeçote segue lendo, longe do fim da fita
+        tempo_volta = 1
+        indice_volta = indice_freio + round(celulas_por_segundo*tempo_volta)
         self.play(cabecote.animate(rate_func=linear).move_to(posicao_cabecote(indice_volta)),
-                  volta.animate(rate_func=smooth).set_value(1), run_time=tempo_volta)
-        fita.remove_updater(seguir_cabecote)
-        camera.set_x(0)
+                  camera.animate(rate_func=smooth).set_x(0), run_time=tempo_volta)
         fita.remove_updater(destacar_leitura)
         self.remove(cabecote)
         for celula, _ in fita:
