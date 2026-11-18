@@ -1007,14 +1007,14 @@ class EscapeS(MovingCameraScene):
         #Cada \n é uma quebra de linha: o quadrado lê Linha1 e cresce rápido em volta do \n
         caixa = caixa_leitura(8, 9)
         self.play(FadeIn(caixa), run_time=0.3)
-        self.play(LaggedStart(*ler(9, 14), lag_ratio=0.15, rate_func=linear), imprimir("Linha1"), run_time=0.6)
+        self.play(LaggedStart(*ler(9, 14), lag_ratio=0.15, rate_func=linear), imprimir("Linha1"), run_time=1.05)
         self.play(Transform(caixa, caixa_leitura(14, 16)), run_time=0.2)
         for _ in range(1):
             linha_cursor[0] = nova_linha_vazia()
         self.wait(0.6)
 
         #Linha2 e os dois \n
-        self.play(LaggedStart(*ler(16, 22), lag_ratio=0.15, rate_func=linear), imprimir("Linha2"), run_time=0.6)
+        self.play(LaggedStart(*ler(16, 22), lag_ratio=0.15, rate_func=linear), imprimir("Linha2"), run_time=1.05)
         
         self.play(Transform(caixa, caixa_leitura(22, 24)), run_time=0.2)
         self.wait(0.3)
@@ -1024,7 +1024,7 @@ class EscapeS(MovingCameraScene):
         self.wait(0.6)
 
         #Linha3
-        self.play(LaggedStart(*ler(26, 32), lag_ratio=0.15, rate_func=linear), imprimir("Linha3"), run_time=0.6)
+        self.play(LaggedStart(*ler(26, 32), lag_ratio=0.15, rate_func=linear), imprimir("Linha3"), run_time=1.05)
         self.play(FadeOut(caixa), run_time=0.3)
         linha_atual = novo_prompt()
         self.wait(2)
@@ -1043,52 +1043,88 @@ class Escape0(MovingCameraScene):
         nome_nulo = Text("Caractere Nulo", font_size=500, weight=BOLD).scale(0.1).next_to(barra_zero, DOWN, buff=0.5)
 
         #String de exemplo
-        string_comando = criar_codigo('"Projeto Comando"').scale(1.5).move_to(ORIGIN)
+        string_comando = criar_codigo('"ABC"').scale(1.5).move_to(ORIGIN)
 
-        #Fita de bits no estilo da máquina de Turing da aula 01, começando na borda esquerda e passando da tela
+        #Fita de bits no estilo da máquina de Turing da aula 01. Os 3 primeiros bytes são "ABC" em ASCII e o resto são
+        #caracteres aleatórios, assim o caractere mostrado embaixo do cabeçote sempre bate com os bits do byte
         gerador = random.Random(7)
-        largura_celula = 0.5
-        altura_celula = 0.75
-        tamanho_bit = 340
-        quantidade_celulas = 170
+        #Sem dígitos (para não confundir com os bits e o \0) e sem a barra invertida
+        imprimiveis = [chr(codigo) for codigo in range(33, 127) if not chr(codigo).isdigit() and chr(codigo) != "\\"]
+        quantidade_bytes = 34
+        caracteres = list("ABC") + [gerador.choice(imprimiveis) for _ in range(quantidade_bytes - 3)]
+        bits = "".join(format(ord(caractere), "08b") for caractere in caracteres)
+        #36 células (4 bytes e meio) cabem na primeira tela
+        margem = 0.25
+        largura_celula = (config.frame_width - 2*margem)/36
+        largura_byte = 8*largura_celula
+        altura_celula = 0.6
+        tamanho_bit = 260
         fita = VGroup()
-        for _ in range(quantidade_celulas):
+        for valor in bits:
             celula = Rectangle(height=altura_celula, width=largura_celula, fill_color=BLUE_E,
                                fill_opacity=0.4, stroke_color=WHITE, stroke_width=2)
-            bit = Text(gerador.choice("01"), font_size=tamanho_bit).scale(0.1).move_to(celula)
+            bit = Text(valor, font_size=tamanho_bit).scale(0.1).move_to(celula)
             fita.add(VGroup(celula, bit))
         fita.arrange(RIGHT, buff=0)
-        fita.move_to(ORIGIN, aligned_edge=LEFT).set_x(-config.frame_width/2 + 0.25, direction=LEFT)
+        fita.move_to(ORIGIN).set_x(-config.frame_width/2 + margem, direction=LEFT)
+        x_inicio_fita = fita.get_left()[0]
+
+        #Delimitação depois do terceiro byte
+        x_limite = fita[23].get_right()[0]
+        delimitacao = Line([x_limite, 0.6, 0], [x_limite, -0.6, 0], color=vermelho, stroke_width=5)
+        texto_fim = Text("String termina aqui", font_size=280, weight=BOLD, color=vermelho).scale(0.1).next_to(delimitacao, UP, buff=0.2)
+
+        #Leitura de byte em byte: leitura é a posição contínua em bytes. O cabeçote anda até o próximo byte
+        #no começo de cada passo e espera nele, e a câmera segue a posição contínua para não tremer com os degraus
+        leitura = ValueTracker(0)
+        def x_byte(posicao):
+            return x_inicio_fita + (posicao + 0.5)*largura_byte
+        def degrau(posicao):
+            inteiro = np.floor(posicao)
+            return inteiro + smooth(min(1, (posicao - inteiro)/0.45))
 
         cabecote = Triangle(fill_color=roxo, fill_opacity=0.6, stroke_color="#8728BE", stroke_width=4).scale(0.25)
-        def posicao_cabecote(indice):
-            return fita[indice][0].get_center() + DOWN*0.85
-        cabecote.move_to(posicao_cabecote(0))
+        y_cabecote = fita.get_y() - altura_celula/2 - 0.45
 
-        #Delimitação depois do bit 27
-        indice_fim = 26
-        x_fim = fita[indice_fim].get_right()[0]
-        delimitacao = Line([x_fim, 0.7, 0], [x_fim, -0.7, 0], color=vermelho, stroke_width=5)
-        #O bit 27 fica perto da borda direita, então o texto termina na linha em vez de ficar centralizado
-        texto_fim = Text("String termina aqui", font_size=280,
-                         weight=BOLD, color=vermelho).scale(0.1).next_to(delimitacao, UP, buff=0.2, aligned_edge=RIGHT)
+        #Caractere lido aparece embaixo do cabeçote e troca direto, sem transição
+        def texto_caractere(caractere):
+            return Text(caractere, font="Monospace", font_size=360, color=branco_codigo).scale(0.1)
+        caractere_lido = texto_caractere("A")
 
-        #Célula embaixo do cabeçote fica acesa
-        def destacar_leitura(grupo, dt):
-            for celula, _ in grupo:
-                if abs(celula.get_x() - cabecote.get_x()) < largura_celula/2:
+        #O byte embaixo do cabeçote fica aceso
+        aceso = [None]
+        def acender(indice_byte, ligado):
+            if indice_byte is None or not 0 <= indice_byte < quantidade_bytes:
+                return
+            for celula, _ in fita[8*indice_byte:8*indice_byte + 8]:
+                if ligado:
                     celula.set_fill(BLUE_C, opacity=0.9)
                 else:
                     celula.set_fill(BLUE_E, opacity=0.4)
 
-        #Câmera persegue o cabeçote como uma mola amortecida: parte parada, acelera aos poucos e,
-        #com o cabeçote em velocidade constante, fica 2*velocidade/rigidez para trás dele (uns 3.3 de distância)
+        def ler_byte(cabeca, dt=0):
+            cabeca.move_to([x_byte(degrau(leitura.get_value())), y_cabecote, 0])
+            atual = int(round((cabeca.get_x() - x_inicio_fita)/largura_byte - 0.5))
+            if atual != aceso[0]:
+                acender(aceso[0], False)
+                acender(atual, True)
+                aceso[0] = atual
+                caractere_lido.become(texto_caractere(caracteres[atual]))
+            caractere_lido.next_to(cabeca, DOWN, buff=0.15)
+
+        def apagar_leitura():
+            acender(aceso[0], False)
+            aceso[0] = None
+
+        #Câmera persegue a leitura como uma mola amortecida: parte parada, acelera aos poucos e, com a leitura em
+        #velocidade constante, fica 2*velocidade/rigidez atrás do alvo. O avanço puxa o alvo um pouco para frente
         estado_camera = {"x": 0.0, "v": 0.0}
         rigidez = 9
-        def perseguir_cabecote(grupo, dt):
+        avanco = 1
+        def perseguir_cabecote(cabeca, dt):
             passos = 10
             for _ in range(passos):
-                erro = cabecote.get_x() - estado_camera["x"]
+                erro = x_byte(leitura.get_value()) + avanco - estado_camera["x"]
                 aceleracao = rigidez**2*erro - 2*rigidez*estado_camera["v"]
                 estado_camera["v"] += aceleracao*dt/passos
                 estado_camera["x"] += estado_camera["v"]*dt/passos
@@ -1109,80 +1145,95 @@ class Escape0(MovingCameraScene):
         self.play(ReplacementTransform(string_comando.code_lines, visiveis), run_time=1.2)
         self.remove(visiveis)
         self.add(fita)
-        self.play(GrowFromCenter(cabecote), run_time=0.4)
+        #Updater vazio: sem ele o manim trata a fita como estática durante as animações e o byte aceso só troca na animação seguinte
+        fita.add_updater(lambda grupo, dt: None)
+        #Cabeçote aparece no primeiro byte já mostrando o caractere lido
+        ler_byte(cabecote)
+        self.play(GrowFromCenter(cabecote), FadeIn(caractere_lido), run_time=0.4)
+        cabecote.add_updater(ler_byte)
         self.play(GrowFromCenter(delimitacao), FadeIn(texto_fim, shift=DOWN*0.2), run_time=0.6)
         self.wait(1)
 
-        #...mas não sabe onde ela termina: lê rápido até a delimitação e para um pouco
-        fita.add_updater(destacar_leitura)
-        self.play(cabecote.animate.move_to(posicao_cabecote(indice_fim)), rate_func=linear, run_time=1.5)
+        #...mas não sabe onde ela termina: lê A, B e C até a delimitação e para um pouco
+        self.play(leitura.animate.set_value(2), rate_func=linear, run_time=1.2)
         self.wait(0.6)
 
-        #Sem marcação, continua lendo a memória vizinha por 3 segundos com a câmera atrás
+        #Sem marcação, continua lendo a memória vizinha com a câmera atrás
+        bytes_por_segundo = 6
+        tempo_seguindo = 2.5
         estado_camera["x"], estado_camera["v"] = camera.get_x(), 0.0
-        fita.add_updater(perseguir_cabecote)
-        celulas_por_segundo = 30
-        indice_final = indice_fim + 3*celulas_por_segundo
-        self.play(cabecote.animate.move_to(posicao_cabecote(indice_final)), rate_func=linear, run_time=3)
-        fita.remove_updater(perseguir_cabecote)
+        cabecote.add_updater(perseguir_cabecote)
+        posicao_final = 2 + bytes_por_segundo*tempo_seguindo
+        self.play(leitura.animate.set_value(posicao_final), rate_func=linear, run_time=tempo_seguindo)
+        cabecote.remove_updater(perseguir_cabecote)
 
         #Câmera desacelera rápido até parar, saindo da velocidade que tinha (sem tranco), e o cabeçote continua lendo
         tempo_freio = 0.3
         #O updater não roda no último passo da animação anterior, então a câmera é adiantada em um quadro para não repetir posição
         v_freio = estado_camera["v"]
         x_freio = estado_camera["x"] + v_freio/config.frame_rate
-        indice_freio = indice_final + round(celulas_por_segundo*tempo_freio)
-        self.play(cabecote.animate(rate_func=linear).move_to(posicao_cabecote(indice_freio)),
+        posicao_freio = posicao_final + bytes_por_segundo*tempo_freio
+        self.play(leitura.animate(rate_func=linear).set_value(posicao_freio),
                   UpdateFromAlphaFunc(camera, lambda frame, alpha: frame.set_x(x_freio + v_freio*tempo_freio*(alpha - alpha**2/2)),
                                       rate_func=linear), run_time=tempo_freio)
 
-        #Para resolver isso, é usado o \0: fora de vista, os primeiros 8 bits viram o 'o' e o limite vai para o oitavo bit
-        def trocar_bit(indice, valor):
-            return Text(valor, font_size=tamanho_bit).scale(0.1).move_to(fita[indice][0])
-        for indice, valor in enumerate("01101111"):
-            fita[indice][1].become(trocar_bit(indice, valor))
-        #A linha fica mais alta para o texto ficar acima das chaves que aparecem depois
-        x_limite = fita[7].get_right()[0]
-        delimitacao.put_start_and_end_on([x_limite, 1.7, 0], [x_limite, -0.7, 0])
+        #Fora de vista, a linha do limite fica mais alta para o texto ficar acima das chaves que aparecem depois
+        delimitacao.put_start_and_end_on([x_limite, 1.7, 0], [x_limite, -0.6, 0])
         texto_fim.next_to(delimitacao, UP, buff=0.2)
 
         #Câmera acelera rápido de volta para a posição inicial enquanto o cabeçote segue lendo, longe do fim da fita
         tempo_volta = 1
-        indice_volta = indice_freio + round(celulas_por_segundo*tempo_volta)
-        self.play(cabecote.animate(rate_func=linear).move_to(posicao_cabecote(indice_volta)),
+        posicao_volta = posicao_freio + bytes_por_segundo*tempo_volta
+        self.play(leitura.animate(rate_func=linear).set_value(posicao_volta),
                   camera.animate(rate_func=smooth).set_x(0), run_time=tempo_volta)
-        fita.remove_updater(destacar_leitura)
-        self.remove(cabecote)
-        for celula, _ in fita:
-            celula.set_fill(BLUE_E, opacity=0.4)
+        cabecote.remove_updater(ler_byte)
+        apagar_leitura()
+        self.remove(cabecote, caractere_lido)
 
-        #Os 8 bits depois do limite viram 0
+        #Para resolver isso, é usado o \0: os 8 bits depois do limite viram 0 e o limite anda para depois deles
         #Transforms separados com atraso em vez de LaggedStart: o LaggedStart coloca um grupo novo na cena com esses bits,
-        #o que separa a fita em células soltas e o updater de leitura para de funcionar
+        #o que separa a fita em células soltas
+        def trocar_bit(indice, valor):
+            return Text(valor, font_size=tamanho_bit).scale(0.1).move_to(fita[indice][0])
+        caracteres[3] = r"\0"
+        novo_limite = fita[31].get_right()[0]
+        texto_fim_alvo = texto_fim.copy().set_x(novo_limite)
+        #Se o texto centralizado passar da borda da tela, ele termina na linha
+        if texto_fim_alvo.get_right()[0] > config.frame_width/2 - 0.15:
+            texto_fim_alvo.set_x(novo_limite, direction=RIGHT)
         self.play(*[Transform(fita[indice][1], trocar_bit(indice, "0"), rate_func=squish_rate_func(smooth, k*0.1, k*0.1 + 0.3))
-                    for k, indice in enumerate(range(8, 16))], run_time=1.5)
+                    for k, indice in enumerate(range(24, 32))],
+                  delimitacao.animate.shift(RIGHT*(novo_limite - x_limite)),
+                  texto_fim.animate.move_to(texto_fim_alvo), run_time=1.5)
         self.wait(1.5)
 
-        #Chaves em cima: 'o' antes do limite e '\0' nos bits zerados
-        chave_o = Brace(VGroup(*fita[:8]), UP, buff=0.1)
-        rotulo_o = criar_codigo("'o'").scale(1.6).next_to(chave_o, UP, buff=0.1)
-        chave_nulo = Brace(VGroup(*fita[8:16]), UP, buff=0.1)
+        #Chaves em cima: 'A', 'B' e 'C' antes do limite e '\0' nos bits zerados
+        chaves_letras = VGroup()
+        rotulos_letras = VGroup()
+        for indice_byte, letra in enumerate("ABC"):
+            chave = Brace(VGroup(*fita[8*indice_byte:8*indice_byte + 8]), UP, buff=0.1)
+            chaves_letras.add(chave)
+            rotulos_letras.add(criar_codigo(f"'{letra}'").scale(1.6).next_to(chave, UP, buff=0.1))
+        chave_nulo = Brace(VGroup(*fita[24:32]), UP, buff=0.1)
         rotulo_nulo = criar_codigo(r"'\0'").scale(1.6).next_to(chave_nulo, UP, buff=0.1)
-        self.play(GrowFromCenter(chave_o), FadeIn(rotulo_o.code_lines, shift=DOWN*0.2), run_time=0.6)
+        self.play(*[GrowFromCenter(chave) for chave in chaves_letras],
+                  *[FadeIn(rotulo.code_lines, shift=DOWN*0.2) for rotulo in rotulos_letras], run_time=0.6)
         self.wait(1.5)
         self.play(GrowFromCenter(chave_nulo), FadeIn(rotulo_nulo.code_lines, shift=DOWN*0.2), run_time=0.6)
         self.wait(1)
 
-        #Cabeçote volta e lê rápido só os 8 primeiros bits
-        cabecote.move_to(posicao_cabecote(0))
-        self.play(FadeIn(cabecote), run_time=0.4)
-        fita.add_updater(destacar_leitura)
-        self.play(cabecote.animate.move_to(posicao_cabecote(7)), rate_func=linear, run_time=0.7)
+        #Cabeçote volta e lê rápido os bytes da string até o \0
+        leitura.set_value(0)
+        ler_byte(cabecote)
+        self.play(FadeIn(cabecote), FadeIn(caractere_lido), run_time=0.4)
+        cabecote.add_updater(ler_byte)
+        self.play(leitura.animate.set_value(3), rate_func=linear, run_time=1.2)
+        cabecote.remove_updater(ler_byte)
         self.wait(2)
 
         self.play(FadeOut(*self.mobjects))
         self.wait(0.25)
-        
+
 class Main(MovingCameraScene):
     def construct(self):
         PreIntro.construct(self)
