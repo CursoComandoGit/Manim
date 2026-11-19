@@ -1,0 +1,12 @@
+# This file records the segment order used by Manim.
+file 'file:C:/Users/leand/manimationsFuncionando/Manim/comando.c/aula05-Variaveis/media/videos/aula5/1080p60/partial_movie_files/Creditos/e70022bb58c201a023bd0b862378784d25dc8450c68d508700f624a9ee979e8a.mp4'
+file 'file:C:/Users/leand/manimationsFuncionando/Manim/comando.c/aula05-Variaveis/media/videos/aula5/1080p60/partial_movie_files/Creditos/7cfbbfe59cf959dc94ca705463c5eb273de77ea4d9cb85aae5cb6eae20cc941a.mp4'
+file 'file:C:/Users/leand/manimationsFuncionando/Manim/comando.c/aula05-Variaveis/media/videos/aula5/1080p60/partial_movie_files/Creditos/f44736e93e3a5bed7a5eb685a156167562772b21f0538a41c5eed57e0110fe08.mp4'
+file 'file:C:/Users/leand/manimationsFuncionando/Manim/comando.c/aula05-Variaveis/media/videos/aula5/1080p60/partial_movie_files/Creditos/ef9e6861bc1ae5949c051db2dbb5af0d14173501e2cca37c775ea3676a52e071.mp4'
+file 'file:C:/Users/leand/manimationsFuncionando/Manim/comando.c/aula05-Variaveis/media/videos/aula5/1080p60/partial_movie_files/Creditos/61f0b04dd9c394efe5a92c7e6d8c11618a08a8ee71acc980cd59fbb6f35ac653.mp4'
+file 'file:C:/Users/leand/manimationsFuncionando/Manim/comando.c/aula05-Variaveis/media/videos/aula5/1080p60/partial_movie_files/Creditos/0a063381360f25e70b5e0820f07ba96b453dddfba7f698869a1b759724c9f688.mp4'
+file 'file:C:/Users/leand/manimationsFuncionando/Manim/comando.c/aula05-Variaveis/media/videos/aula5/1080p60/partial_movie_files/Creditos/03d777b23279ace2c80d9ff52fb417e63af5de69f50eb9ff6d6d0e2ab3bc200c.mp4'
+file 'file:C:/Users/leand/manimationsFuncionando/Manim/comando.c/aula05-Variaveis/media/videos/aula5/1080p60/partial_movie_files/Creditos/ca64ada99fb9fdbe159682fc9ff24d0139d184800c96ccb27faf5ef7db6c1f65.mp4'
+file 'file:C:/Users/leand/manimationsFuncionando/Manim/comando.c/aula05-Variaveis/media/videos/aula5/1080p60/partial_movie_files/Creditos/a2359e88aa79d24203f8a23d3e563cc7e550381a8e1f37915abc741efb15c716.mp4'
+file 'file:C:/Users/leand/manimationsFuncionando/Manim/comando.c/aula05-Variaveis/media/videos/aula5/1080p60/partial_movie_files/Creditos/6f5be4829ff6bf1c753f0db078b77c0ce2ac715682e3a00a921be990228e52ae.mp4'
+file 'file:C:/Users/leand/manimationsFuncionando/Manim/comando.c/aula05-Variaveis/media/videos/aula5/1080p60/partial_movie_files/Creditos/0473002f8e0419420ad9371c8baa44c2fdd0b46071540c6c34be84a7a83ded16.mp4'

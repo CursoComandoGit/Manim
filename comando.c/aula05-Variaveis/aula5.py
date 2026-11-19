@@ -967,10 +967,62 @@ class Fim(Scene):
         
         self.play(Write(rawTitle))
         self.wait()
-        logo = ImageMobject("images/icon_c.png").scale(0.2)
+def fix_cap(mob):
+    for m in mob.family_members_with_points():
+        m.set_cap_style(CapStyleType.BUTT)
+    return mob
+def T(texto, **kwargs):
+    return fix_cap(Tex(texto, **kwargs))
+class Creditos(Scene):
+    def construct(self):
+        #creditos
+        logo = ImageMobject("assets/icon_c.png").scale(0.2)
         logoOrigin=logo.copy().move_to(UP*8).rotate(PI)
-        # O cursor
-        cursorVinheta=ImageMobject("images/cursor.png").move_to(DOWN*6+LEFT*2).scale(0.05)
+        cursor=ImageMobject("assets/cursor.png").move_to(DOWN*6+LEFT*2).scale(0.05)
+        titulo=Text("Créditos", font_size=80)
+        titulo.color="#AA77C7"
+
+   
+        diretor = VGroup(T("Diretor", color = "#AA77C7", font_size=60), T("Rainier R. Waki", font_size=50)).arrange(DOWN, buff=0.3)
+        tutor = VGroup(T("Tutor", color = "#AA77C7", font_size=60), T("Alyson V. Isaluski", font_size=50)).arrange(DOWN, buff=0.3)
+        redator = VGroup(T("Redator", color = "#AA77C7", font_size=60), T("Eduardo M. de Souza", font_size=50), T("Rainier R. Waki", font_size=50)).arrange(DOWN, buff=0.3)
+        animadores = VGroup(
+            T("Animadores", color = "#AA77C7", font_size=60),
+            VGroup(
+                T("Eduarda dos R. Mendes", font_size=50),
+                T("Leandro M. M. Hyeda", font_size=50)
+            ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        editora = VGroup(T("Editor", color = "#AA77C7", font_size=60), T("Felipe O. Camargo", font_size=50)).arrange(DOWN, buff=0.3)
+        roteirista = VGroup(
+            T("Roteiristas", color = "#AA77C7", font_size=60),
+            VGroup(
+                T("Alyson V. Isaluski", font_size=50),
+                T("Kia de P. Marins", font_size=50)
+            ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        utfpr = ImageMobject("assets/utfpr.png").scale(0.7)
+        
+        creditos = VGroup(diretor, tutor, redator, animadores).scale(0.6)
+        creditos2= VGroup(editora, roteirista).scale(0.6)
+
+        for bloco in creditos:
+            if isinstance(bloco, VGroup):
+                bloco.arrange(DOWN, aligned_edge=LEFT)
+
+        for bloco in creditos2:
+            if isinstance(bloco, VGroup):
+                bloco.arrange(DOWN, aligned_edge=LEFT)
+
+        creditos.arrange(DOWN, aligned_edge=LEFT, buff=0.4)
+        creditos.to_edge(LEFT, buff=0.5).shift(UP*0.2)
+
+        creditos2.arrange(DOWN, aligned_edge=LEFT, buff=0.4)
+        creditos2.to_edge(LEFT, buff=0.5).shift(UP*0.2)
+
+        utfpr.scale(0.4)
+        utfpr.move_to(DOWN*3.5)
+        utfpr.to_edge(LEFT, buff=0.5)
 
         self.play(
             logoOrigin.animate.become(logo),
@@ -978,14 +1030,22 @@ class Fim(Scene):
         )
 
         # Cursor aparece e se move
-        self.play(cursorVinheta.animate.move_to(ORIGIN+RIGHT*0.25+DOWN*0.45))
-        self.play(cursorVinheta.animate.scale(0.8),run_time=0.1,rate_func=linear)  # Clica
-        self.play(cursorVinheta.animate.scale(1.2),run_time=0.1,rate_func=linear)  #
-        
+        self.play(cursor.animate.move_to(ORIGIN+RIGHT*0.25+DOWN*0.45))
+        self.play(cursor.animate.scale(0.8), run_time=0.1, rate_func=linear)  # Clica
+        self.play(cursor.animate.scale(1.2), run_time=0.1, rate_func=linear)  #
+
         # Vinheta Puxada
         self.play(
-            GrowFromCenter(Rectangle(color="#0A0A0A",fill_opacity=1,width=20, height=10),run_time=0.5)
+            GrowFromCenter(Rectangle(color="#0A0A0A", fill_opacity=1, width=20, height=10), run_time=0.5)
         )
+
+        # Nomes e Cargos
+        self.play(Write(creditos),FadeIn(utfpr))
+        self.wait()
+        self.play(FadeOut(creditos))
+        self.play(Write(creditos2))
+        self.wait()
+        self.play(FadeOut(creditos2),FadeOut(utfpr))
 MarkupText.set_default(font = "Manrope")
 Circumscribe.set_default(color=WHITE)
 Indicate.set_default(color="#AA77C7")
@@ -2342,20 +2402,21 @@ class Aula5(MovingCameraScene):
     config.background_color = "#1E1E1E"
     Text.set_default(font = "Manrope")
     def construct(self):
-        Intro.construct(self)
-        CriandoAVariavel.construct(self)
-        RegrasNome.construct(self)
-        CaseSensitive.construct(self)
-        Atribucao.construct(self)
-        segundoConjuntoRegras.construct(self)
-        soma.construct(self)
-        tiposPrimitivos.construct(self)
-        tipoInt.construct(self)
-        tipoFloat.construct(self)
-        novoTipoChar.construct(self)
-        tabelaASCII.construct(self)
-        contaCaractereValor2.construct(self)
-        intChar.construct(self)
-        tipoChar.construct(self)
-        tipoString.construct(self)
+        #Intro.construct(self)
+        #CriandoAVariavel.construct(self)
+        #RegrasNome.construct(self)
+        #CaseSensitive.construct(self)
+        #Atribucao.construct(self)
+        #segundoConjuntoRegras.construct(self)
+        #soma.construct(self)
+        #tiposPrimitivos.construct(self)
+        #tipoInt.construct(self)
+        #tipoFloat.construct(self)
+        #novoTipoChar.construct(self)
+        #tabelaASCII.construct(self)
+        #contaCaractereValor2.construct(self)
+        #intChar.construct(self)
+        #tipoChar.construct(self)
+        #tipoString.construct(self)
         Fim.construct(self)
+        Creditos.construct(self)
