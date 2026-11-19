@@ -1148,6 +1148,7 @@ class Escape0(MovingCameraScene):
         #Updater vazio: sem ele o manim trata a fita como estática durante as animações e o byte aceso só troca na animação seguinte
         fita.add_updater(lambda grupo, dt: None)
         #Cabeçote aparece no primeiro byte já mostrando o caractere lido
+        self.wait(0.5)
         ler_byte(cabecote)
         self.play(GrowFromCenter(cabecote), FadeIn(caractere_lido), run_time=0.4)
         cabecote.add_updater(ler_byte)
